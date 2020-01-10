@@ -1,0 +1,17 @@
+{
+  "name": "solitaire",
+  "version": "1.0.0",
+  "description": "",
+  "main": "./bin/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "bin": {
+    "solitaire": "./bin/app.js"
+  },
+  "dependencies": {
+    "yargs": "^15.1.0"
+  }
+}
