@@ -1,9 +1,10 @@
 let cards = require('./card.js');
 
-if (!Array.prototype.last){
-    Array.prototype.last = function(){
-        return this[this.length - 1];
-    };
+// add .last() method to arrays
+if (!Array.prototype.last) {
+  Array.prototype.last = function() {
+    return this[this.length - 1];
+  };
 };
 
 class Game {
@@ -19,9 +20,12 @@ class Game {
       for (let c=0; c<=i; c++) {
         this.tableau[i].push(this.stock.shift());
       }
+      this.tableau[i].last().faceUp = true;
     }
+    this.stock.last().faceUp = true;
   }
 
+  // returns an array of N empty arrays
   arrays(count) {
     let arr = [];
     for (let i=0; i<count; i++) {
@@ -29,6 +33,7 @@ class Game {
     }
     return arr;
   }
+
 }
 
 module.exports = {

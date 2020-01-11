@@ -1,9 +1,10 @@
 class Card {
-  static SUITS = [1,2,3,4];
+  static SUITS = ['S','H','C','D'];
   static RANKS = [1,2,3,4,5,6,7,8,9,10,11,12,13];
-  constructor(suit, rank) {
+  constructor(suit, rank, faceUp=false) {
     this.suit = suit;
     this.rank = rank;
+    this.faceUp = faceUp;
   }
 
   toString() {
