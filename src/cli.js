@@ -1,7 +1,7 @@
 // provides a command line ux for the game engine
 
 const games = require('./game.js');
-let game = new games.Game();
+let game;
 const readline = require('readline');
 const rl = readline.createInterface({
   input: process.stdin,
@@ -30,6 +30,15 @@ let inputLoop = function () {
     else if (ans.startsWith('m')) {
       move(ans);
     }
+    else if (ans == 'p') {
+      pass();
+    } 
+    else if (ans == 'r') {
+      restock();
+    }
+    else if (ans == 'n') {
+      newGame();
+    }
     else {
       help();
     }
@@ -39,11 +48,12 @@ let inputLoop = function () {
 
 exports.run = function() {
   pr('Enter h for help.');
+  newGame();
   inputLoop();
 }
 
-function printCard(c, prefix = '') {
-  pr(`${prefix}Card [suit: ${c.suit}, rank: ${c.rank}]`);
+function printCard(c, prefix = 'Card ') {
+  pr(`${prefix}[suit: ${c.suit}, rank: ${c.rank}]`);
 }
 
 function tableau() {
@@ -67,18 +77,19 @@ function tableau() {
 }
 
 function foundations() {
-  game.foundations.forEach((f) => {
+  pr('Foundations');
+  game.foundations.forEach((f,ix) => {
     if (f.length > 0) {
-      printCard(f.last());
+      printCard(f.last(), '  ');
     } else {
-      pr(" -- ");
+      pr("  -- ");
     }
   });
 }
 
 function stock() {
   if (game.stock.length > 0) {
-    printCard(game.stock.last());
+    printCard(game.stock.last(), 'Stock ');
     pr(game.stock.length-1 + " remaining");
   }
 }
@@ -95,6 +106,7 @@ function help() {
   pr("n: new game");
   pr("m [from: s|f1-f4|t1-t7 to: f1-f4|t1-t7]]: moves a card from stock, a foundation or tableau to a foundation or tableau");
   pr("p: pass, move active card from stock to waste");
+  pr("r: restock from waste");
   pr("x: exit");
 }
 
@@ -114,12 +126,13 @@ function move(args) {
       
     // validate arguments
     if (!game.canMove(from, fromIx, to, toIx)) {
-      pr('Invalid move.');
+      pr('Illegal move.');
         return;
     }
 
     // move the card
     game.move(from, fromIx, to, toIx);
+    pr('Moved ' + args);
 
     // display result
     if (from =='t' || to == 't') {
@@ -133,3 +146,25 @@ function move(args) {
     }
   }
 }
+
+function pass() {
+  if (game.pass()) {
+    pr('Next card:');
+    stock();
+  }
+  else pr('Stock is empty.');
+}
+
+function newGame() {
+  game = new games.Game();
+  tableau();
+  stock();
+}
+
+function restock() {
+  if (game.restock()) {
+    pr('Next card:');
+    stock();
+  } else pr('Nothing to restock or stock is not empty.');
+}
+

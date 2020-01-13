@@ -18,7 +18,7 @@ class Game {
     this.waste = [];
     for (let i=0; i<7; i++) {
       for (let c=0; c<=i; c++) {
-        this.tableau[i].push(this.stock.shift());
+        this.tableau[i].push(this.stock.pop());
       }
       this.tableau[i].last().faceUp = true;
     }
@@ -115,21 +115,82 @@ class Game {
       return this.stock.last();
     }
     if (from == 't') {
-      let t = this.tableau[fromIx];
+      let t = this.tableau[fromIx - 1];
       if (t) {
         return t.last();
       }
     }
     if (from == 'f') {
-      let f = this.foundations[fromIx];
+      let f = this.foundations[fromIx - 1];
       if (f) {
         return f.last();
       }
     }
   }
 
+  // moves a card from stock, tableau or foundation to a tableau or foundation. Returns true if successful
   move(from, fromIx, to, toIx) {
-    console.log('move...');
+    if (!this.canMove(from, fromIx, to, toIx)) {
+      return false;
+    }
+    let card = false;
+    let dest = false;
+    if (from == 's') {
+      card = this.stock.pop();
+    } 
+    else if (from == 'f') {
+      card = this.foundations[fromIx - 1].pop();
+    }
+    else if (from == 't') {
+      card = this.tableau[fromIx - 1].pop();
+    }
+    if (to == 't') {
+      dest = this.tableau[toIx - 1];
+    }
+    else if (to == 'f') {
+      dest = this.foundations[toIx - 1];
+    }
+    if (!card || !dest) {
+      return false;
+    }
+    card.faceUp = true;
+    dest.push(card);
+    if (from == 't') {
+      let last = is.tableau[fromIx - 1].last();
+      if (last) last.faceUp = true;
+    }
+    if (from == 's') {
+      let last = this.stock.last();
+      if (last) last.faceUp = true;
+    }
+  }
+
+  // moves a card from stock to waste, returns false if stock is empty
+  pass() {
+    let card = this.stock.pop();
+    if (card) {
+      card.faceUp = false;
+      this.waste.push(card);
+      this.stock.last().faceUp = true;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  // moves waste back into stock, returns false if nothing to restock or stock isnt empty
+  restock() {
+    if (this.waste.length == 0 || this.stock.length > 0) {
+      return false;
+    }
+    else {
+      while (this.waste.length > 0) {
+        let card = this.waste.pop();
+        card.faceUp = false;
+        this.stock.push(card);
+      }
+      return true;
+    }
   }
 
 }

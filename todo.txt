@@ -1,0 +1,2 @@
+move stack from tableau
+better table display
