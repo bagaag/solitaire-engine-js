@@ -156,7 +156,7 @@ class Game {
     card.faceUp = true;
     dest.push(card);
     if (from == 't') {
-      let last = is.tableau[fromIx - 1].last();
+      let last = this.tableau[fromIx - 1].last();
       if (last) last.faceUp = true;
     }
     if (from == 's') {

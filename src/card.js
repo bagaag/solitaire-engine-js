@@ -8,7 +8,9 @@ class Card {
   }
 
   toString() {
-    return "[" + this.suit + "," + this.rank + "]";
+    let r = this.rank;
+    r = r==11 ? 'J' : r==12 ? 'Q' : r==13 ? 'K' : r==1 ? 'A' : r;
+    return "[" + this.suit + "-" + r + "]";
   }
 }
 
