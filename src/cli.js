@@ -9,6 +9,13 @@ const rl = readline.createInterface({
 });
 const pr = console.log;
 
+// entry point
+exports.run = function() {
+  newGame();
+  pr('Enter h for help.');
+  inputLoop();
+}
+
 // input loop
 let inputLoop = function () {
   rl.question('> ', function (ans) {
@@ -46,13 +53,6 @@ let inputLoop = function () {
   });
 };
 
-// entry point
-exports.run = function() {
-  newGame();
-  pr('Enter h for help.');
-  inputLoop();
-}
-
 // output tabkeau display
 function tableau() {
   pr ('Tableau');
@@ -72,8 +72,6 @@ function tableau() {
       else {
         sb.pop(); // drop trailing comma
       }
-    } else {
-      sb.push('empty');
     }
     pr(sb.join(''));
   });
@@ -118,7 +116,7 @@ function help() {
 }
 
 // parser for move commands
-const moveRE = /m\s+([stf])([1-7])?\s+([tf])([1-7])/;
+const moveRE = /m\s+([stf])([1-7)?,?([1-9]*)\s+([tf])([1-7])/;
 
 // validate m command and  moves a card
 function move(args) {
@@ -128,20 +126,29 @@ function move(args) {
   else {
     // parse arguments
     let m = args.match(moveRE);
+    if (m == null) {
+      pr('Incorrect move command.');
+      return;
+    }
     let from = m[1];
     let fromIx = m[2];
+    let fromCount = 1;
+    if (fromIx.indexOf(',') > 0) {
+      let a = fromIx.split(',');
+      fromIx = a[0];
+      fromCount = a[1];
+    }
     let to = m[3];
     let toIx = m[4];
       
-    // validate arguments
-    if (!game.canMove(from, fromIx, to, toIx)) {
-      pr('Illegal move.');
-        return;
-    }
-
     // move the card
-    game.move(from, fromIx, to, toIx);
-    pr('Moved ' + args);
+    if (game.move(from, fromIx, fromCount, to, toIx)) {
+      pr('Moved ' + args);
+    }
+    else {
+      pr('Illegal move.');
+      return;
+    }
 
     // display result
     foundations();
