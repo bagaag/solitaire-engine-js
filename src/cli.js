@@ -43,8 +43,11 @@ let inputLoop = function () {
     else if (ans == 'r') {
       restock();
     }
-    else if (ans == 'n') {
+    else if (ans == 'N') {
       newGame();
+    }
+    else if (ans == 'h m') {
+      helpMove();
     }
     else {
       help();
@@ -107,12 +110,23 @@ function stock() {
 function help() {
   pr("t: show tableau");
   pr("f: show foundations");
-  pr("s: show active card and stoc count");
-  pr("n: new game");
-  pr("m [from: s|f1-f4|t1-t7 to: f1-f4|t1-t7]]: moves a card from stock, a foundation or tableau to a foundation or tableau");
+  pr("s: show active card and stock count");
+  pr("N: new game");
+  pr("m [from: s|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
   pr("p: pass, move active card from stock to waste");
   pr("r: restock from waste");
   pr("x: exit");
+}
+
+function helpMove() {
+  pr("Moving cards:");
+  pr("> m [from] [to]");
+  pr("'m' moves a card, or cards, from stock, a foundation or tableau to a foundation or tableau.");
+  pr("[from]: s|f1-f4|t1-t7,n where s is the stock card, f is one of the 4 foundations and t is one of the tableaus. ',n' optionally specifies how many cards to move from a tableau, default is 1");
+  pr("[to]: f1-f4|t1-t7");
+  pr("- ex. move the stock card to the 2nd tableau: m s t2");
+  pr("- ex. move two cards from the 1st tableau to the 3rd tableau: m t1,2 t3");
+  pr("- ex. move one card from 4th tableau to the 2nd foundation: m t4 f2");
 }
 
 // parser for move commands
@@ -127,7 +141,7 @@ function move(args) {
     // parse arguments
     let m = args.match(moveRE);
     if (m == null) {
-      pr('Incorrect move command.');
+      pr('Invald move syntax.');
       return;
     }
     let from = m[1];
