@@ -1,4 +1,5 @@
 # solitaire-engine-js
-A Klondike engine written for use on the command line or as a library, written in Node.js
 
-Currently in development.
+A simple Klondike solitaire game engine built entirely in Node.js using vim and Termux on an Amdroid phone. It can be used as a library but comes with a workable console client.
+
+Auto-move capability in development.
