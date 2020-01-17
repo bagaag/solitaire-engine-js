@@ -1,7 +1,3 @@
-change pass to draw
-
-play from waste
-
 install and run in readme
 
 auto play without pull
