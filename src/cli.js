@@ -29,16 +29,13 @@ let inputLoop = function () {
       foundations();
     }
     else if (ans == 's') {
-      stock();
-    }
-    else if (ans == 'w') {
-      waste();
+      deck();
     }
     else if (ans.startsWith('m')) {
       move(ans);
     }
-    else if (ans == 'p') {
-      pass();
+    else if (ans == 'd') {
+      draw();
     } 
     else if (ans == 'r') {
       restock();
@@ -64,15 +61,17 @@ function tableau() {
     if (t.length > 0) {
       let isFaceUp = (c) => c.faceUp;
       let firstFaceUp = t.findIndex(isFaceUp);
-      for (let i = t.length-1; i >= 0; i--) {
+      if (firstFaceUp > 0) {
+        sb.push(firstFaceUp,' fd, ');
+      }
+      let dropTail = false;
+      for (let i = 0; i < t.length; i++) {
         if (t[i].faceUp) {
           sb.push(t[i],', ');
+          dropTail = true;
         }
       }
-      if (firstFaceUp > 0) {
-        sb.push(`${firstFaceUp} more`);
-      }
-      else {
+      if (dropTail) {
         sb.pop(); // drop trailing comma
       }
     }
@@ -95,14 +94,18 @@ function foundations() {
   pr(sb.join(''));
 }
 
-// display stock
-function stock() {
-  pr('Stock');
+// display deck
+function deck() {
+  pr('Deck');
   let sb = [];
-  if (game.stock.length > 0) {
-    sb.push('  ', game.stock.last().toString(), ', ');
+  let w = game.waste;
+  if (w.length > 0) {
+    sb.push('  ', w.last().toString(), ', ', w.length - 1, ' waste, ');
   }
-  sb.push(game.stock.length-1 + " remaining, " + game.waste.length + ' in waste');
+  else {
+    sb.push('  No waste, ');
+  }
+  sb.push(game.stock.length + ' stock');
   pr(sb.join(''));
 }
 
@@ -111,26 +114,26 @@ function help() {
   pr("t: show tableau");
   pr("f: show foundations");
   pr("s: show active card and stock count");
+  pr("d: draw the next card from stock");
+  pr("m [from: w|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
+  pr("r: restock from waste pile");
   pr("N: new game");
-  pr("m [from: s|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
-  pr("p: pass, move active card from stock to waste");
-  pr("r: restock from waste");
   pr("x: exit");
 }
 
 function helpMove() {
   pr("Moving cards:");
   pr("> m [from] [to]");
-  pr("'m' moves a card, or cards, from stock, a foundation or tableau to a foundation or tableau.");
-  pr("[from]: s|f1-f4|t1-t7,n where s is the stock card, f is one of the 4 foundations and t is one of the tableaus. ',n' optionally specifies how many cards to move from a tableau, default is 1");
+  pr("'m' moves a card, or cards, from waste, a foundation or tableau to a foundation or tableau.");
+  pr("[from]: w|f1-f4|t1-t7,n where w is the top waste card, f is one of the 4 foundations and t is one of the tableaus. ',n' optionally specifies how many cards to move from a tableau, default is 1");
   pr("[to]: f1-f4|t1-t7");
-  pr("- ex. move the stock card to the 2nd tableau: m s t2");
+  pr("- ex. move the top waste card to the 2nd tableau: m w t2");
   pr("- ex. move two cards from the 1st tableau to the 3rd tableau: m t1,2 t3");
   pr("- ex. move one card from 4th tableau to the 2nd foundation: m t4 f2");
 }
 
 // parser for move commands
-const moveRE = /m\s+([stf])([1-7)?,?([1-9]*)\s+([tf])([1-7])/;
+const moveRE = /m\s+([wtf])([1-7)?,?([1-9]*)\s+([tf])([1-7])/;
 
 // validate m command and  moves a card
 function move(args) {
@@ -167,14 +170,14 @@ function move(args) {
     // display result
     foundations();
     tableau();
-    stock();
+    deck();
   }
 }
 
-// moves current stock card to waste
-function pass() {
-  if (game.pass()) {
-    stock();
+// draws next card from stock
+function draw() {
+  if (game.draw()) {
+    deck();
   }
   else pr('Stock is empty.');
 }
@@ -184,14 +187,13 @@ function newGame() {
   game = new games.Game();
   foundations();
   tableau();
-  stock();
+  deck();
 }
 
 // repopulates stock from waste pile
 function restock() {
   if (game.restock()) {
-    pr('Next card:');
-    stock();
+    deck();
   } else pr('Nothing to restock or stock is not empty.');
 }
 

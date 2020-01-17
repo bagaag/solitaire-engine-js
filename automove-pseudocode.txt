@@ -1,0 +1,34 @@
+auto move pseudo code
+
+move any fitting stock or tableau cards to the foundations 
+
+can any of the tableaus be consolidated?
+- for each tableau
+- get the lowest face up card
+- for each tableau
+- can the card me moved to the top of this pile?: move
+- if it would leave >1 empty piles, do we wait?
+- otherwise if yes move
+- repeat until no more can be consolidated
+
+can the stock card be played?
+- for each place it cam be played
+- king in a empty pile, go for it
+- for each tableau
+- would playing the stock here get us closer to consolidating this pile?
+- and is there not alrwady a better candidate for that consolidation?
+- if yes play the card there
+
+restart whole process afrer every move
+
+when the whole process fails to result in a move, pass instead, skipping to the stock step
+
+when a full cycle of the stack has eesulted in no moves, forfeit
+
+consider insrances where behavior is based on memory of waste
+
+whe a king is down and still a short stack, dont put a king of the same color down from stock if we remember that a king of the other color is in the waste/stock and would better allow a consolidation
+
+deprioritize a consolidation that would leave a blank pile when there is aleeady a blank pile unless we remember that there are helpful kings to fill it in stock/waste
+
+look for foundation-ready cards mid pile in the tableau and look for/workntowards consolidations that would expose that card

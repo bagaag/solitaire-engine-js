@@ -1,1 +1,16 @@
-move stack from tableau
+change pass to draw
+
+play from waste
+
+install and run in readme
+
+auto play without pull
+
+scoring
+
+different deal modes
+
+full autoplay
+
+stats
+
