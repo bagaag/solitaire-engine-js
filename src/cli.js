@@ -23,13 +23,7 @@ let inputLoop = function () {
       return rl.close();
     }
     else if (ans == 't') {
-      tableau();
-    }
-    else if (ans == 'f') {
-      foundations();
-    }
-    else if (ans == 's') {
-      deck();
+      table();
     }
     else if (ans.startsWith('m')) {
       move(ans);
@@ -39,6 +33,9 @@ let inputLoop = function () {
     } 
     else if (ans == 'r') {
       restock();
+    }
+    else if (ans == 'a') {
+      autoMove();
     }
     else if (ans == 'N') {
       newGame();
@@ -53,7 +50,7 @@ let inputLoop = function () {
   });
 };
 
-// output tabkeau display
+// output tableau display
 function tableau() {
   pr ('Tableau');
   game.tableau.forEach((t,ix) => {
@@ -109,14 +106,19 @@ function deck() {
   pr(sb.join(''));
 }
 
+function table() {
+    foundations();
+    tableau();
+    deck();
+}
+
 // display help
 function help() {
-  pr("t: show tableau");
-  pr("f: show foundations");
-  pr("s: show active card and stock count");
+  pr("t: show table");
   pr("d: draw the next card from stock");
   pr("m [from: w|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
   pr("r: restock from waste pile");
+  pr('a: move cards from tableau and waste to foundations');
   pr("N: new game");
   pr("x: exit");
 }
@@ -168,9 +170,7 @@ function move(args) {
     }
 
     // display result
-    foundations();
-    tableau();
-    deck();
+    table();
   }
 }
 
@@ -185,9 +185,7 @@ function draw() {
 // resets the game
 function newGame() {
   game = new games.Game();
-  foundations();
-  tableau();
-  deck();
+  table();
 }
 
 // repopulates stock from waste pile
@@ -197,3 +195,22 @@ function restock() {
   } else pr('Nothing to restock or stock is not empty.');
 }
 
+// move cards from tableau and waste to foundations
+function autoMove() {
+  let moves = game.autoMove();
+  if (moves.length > 0) {
+    pr('Auto Moves');
+    moves.forEach((m) => {
+      if (m[0] == 't') {
+        pr(`  t${m[1]} f${m[3]}`);
+      }
+      else {
+        pr(`  w f${m[3]}`);
+      }
+    });
+    table();
+  }
+  else {
+    pr('No possible moves.');
+  }
+}

@@ -7,6 +7,12 @@ class Card {
     this.faceUp = faceUp;
   }
 
+  suitVal() {
+    for (let s = 0; s < 4; s++) {
+      if (Card.SUITS[s] == this.suit) return s + 1;
+    }
+  }
+
   toString() {
     let r = this.rank;
     r = r==11 ? 'J' : r==12 ? 'Q' : r==13 ? 'K' : r==1 ? 'A' : r;

@@ -86,7 +86,7 @@ class Game {
       }
       else {
         // must alternate red/black suits
-        if (card.suit % 2 == dest.suit % 2) {
+        if (card.suitVal()  % 2 == dest.suitVal() % 2) {
           return false;
         }
         // must be one rank smaller than the parent card
@@ -198,6 +198,61 @@ class Game {
       }
       return true;
     }
+  }
+
+  // adds the card to a foundation if possible and returns index of matched pile or 0 if 
+  addToFoundation(card) {
+    let ix, f;
+    if (card != undefined) {
+      for (const [ix, f] of this.foundations.entries()) {
+        let head = f.last();
+        let playAce = (f.length == 0 && card.rank == 1);
+        let playOther = false;
+        if (head != undefined) {
+          playOther = (head.suit == card.suit && card.rank == head.rank + 1);
+        }
+        if (playAce || playOther) {
+          f.push(card);
+          return ix + 1;
+        }
+      }
+    }
+    return 0;
+  }
+
+  // plays what can be played to the foundations from tableau and waste
+  autoMove() {
+    let moves = [];
+    let moved = false;
+    debugger;
+    while (true) {
+      this.tableau.forEach((t,tix) => {
+        let fix = this.addToFoundation(t.last());
+        if (fix > 0) {
+          moves.push(['t',tix + 1,'f', fix]);
+          moved = true;
+          t.pop();
+          if (t.length > 0) {
+            t.last().faceUp = true;
+          }
+        }
+      });
+      let c = this.waste.last();
+      let ix = this.addToFoundation(c);
+      if (ix > 0) {
+        moves.push(['w',undefined,'f',ix]);
+        moved = true;
+        this.waste.pop();
+      }
+      // exit if nothing more can be moved
+      if (!moved) {
+        break;
+      } 
+      else {
+        moved = false;
+      }
+    }
+    return moves;
   }
 
 }

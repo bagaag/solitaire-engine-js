@@ -1,0 +1,11 @@
+const src = '../src/';
+const cards = require(src + 'card.js');
+const games = require(src + 'game.js');
+let game = new games.Game();
+game.tableau.forEach((t) => { t.length = 0; });
+game.tableau[0].push(new cards.Card('S',5));
+game.tableau[0].push(new cards.Card('S',1));
+let res = game.autoMove();
+console.log(res);
+console.log(game.tableau);
+console.log(game.foundations);

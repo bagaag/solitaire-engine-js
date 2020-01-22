@@ -1,6 +1,8 @@
-install and run in readme
+X bug: not validating suit color on move
 
-auto play without pull
+win state
+
+X auto play without pull
 
 scoring
 
