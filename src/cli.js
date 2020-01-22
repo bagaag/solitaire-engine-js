@@ -171,6 +171,7 @@ function move(args) {
 
     // display result
     table();
+    winCheck();
   }
 }
 
@@ -209,8 +210,15 @@ function autoMove() {
       }
     });
     table();
+    winCheck();
   }
   else {
     pr('No possible moves.');
+  }
+}
+
+function winCheck() {
+  if (game.hasWon()) {
+    pr('You won!');
   }
 }

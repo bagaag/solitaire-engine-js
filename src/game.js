@@ -255,6 +255,15 @@ class Game {
     return moves;
   }
 
+  // tests for win and raises event
+  hasWon() {
+    let f = this.foundations;
+    return [0].length == 13 && 
+      f[1].length == 13 && 
+      f[2].length == 13 && 
+      f[3].length == 13;
+  }
+
 }
 
 module.exports = {

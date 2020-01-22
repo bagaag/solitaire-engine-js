@@ -1,8 +1,4 @@
-X bug: not validating suit color on move
-
-win state
-
-X auto play without pull
+X win state
 
 scoring
 
