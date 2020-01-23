@@ -10,8 +10,8 @@ if (!Array.prototype.last) {
 
 class Game {
 
-  constructor(events) {
-    this.events = events || function () {};
+  constructor() {
+    this.events = [];
     this.deck = new cards.Deck();
     this.deck.shuffle();
     this.stock = this.deck.cards;
@@ -24,12 +24,25 @@ class Game {
       }
       this.tableau[i].last().faceUp = true;
     }
-    this.timer = new timers.Timer(() => { this.events('tick'); });
-    this.events('start');
+  }
+
+  start() {
+    this.timer = new timers.Timer(() => { this._event('tick'); });
+    this._event('start');
   }
 
   debug(...args) {
     console.log(args);
+  }
+
+  addEventListener(func) {
+    this.events.push(func);
+  }
+
+  _event(type, data) {
+    this.events.forEach((e) => { 
+      e(type, data);
+    });
   }
 
   // returns an array of N empty arrays
@@ -174,7 +187,7 @@ class Game {
       let last = this.tableau[fromIx - 1].last();
       if (last) last.faceUp = true;
     }
-    this.events('move', { 
+    this._event('move', { 
       from: from, 
       fromIx: fromIx,
       fromCount: fromCount,
@@ -190,7 +203,7 @@ class Game {
     if (card) {
       card.faceUp = true;
       this.waste.push(card);
-      this.events('draw', { card: card });
+      this._event('draw', { card: card });
       return true;
     } else {
       return false;
@@ -207,7 +220,7 @@ class Game {
         let card = this.waste.pop();
         card.faceUp = false;
         this.stock.push(card);
-        this.events('restock');
+        this._event('restock');
       }
       return true;
     }
@@ -270,7 +283,7 @@ class Game {
 
   // tests for win and raises event
   hasWon() {
-    this.events('won');
+    this._event('won');
     let f = this.foundations;
     return [0].length == 13 && 
       f[1].length == 13 && 
