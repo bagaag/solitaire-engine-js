@@ -1,4 +1,5 @@
 let cards = require('./card.js');
+let timers = require('./timer.js');
 
 // add .last() method to arrays
 if (!Array.prototype.last) {
@@ -9,7 +10,8 @@ if (!Array.prototype.last) {
 
 class Game {
 
-  constructor() {
+  constructor(events) {
+    this.events = events || function () {};
     this.deck = new cards.Deck();
     this.deck.shuffle();
     this.stock = this.deck.cards;
@@ -22,6 +24,8 @@ class Game {
       }
       this.tableau[i].last().faceUp = true;
     }
+    this.timer = new timers.Timer(() => { this.events('tick'); });
+    this.events('start');
   }
 
   debug(...args) {
@@ -170,6 +174,13 @@ class Game {
       let last = this.tableau[fromIx - 1].last();
       if (last) last.faceUp = true;
     }
+    this.events('move', { 
+      from: from, 
+      fromIx: fromIx,
+      fromCount: fromCount,
+      to: to,
+      toIx: toIx
+    });
     return true;
   }
 
@@ -179,6 +190,7 @@ class Game {
     if (card) {
       card.faceUp = true;
       this.waste.push(card);
+      this.events('draw', { card: card });
       return true;
     } else {
       return false;
@@ -195,6 +207,7 @@ class Game {
         let card = this.waste.pop();
         card.faceUp = false;
         this.stock.push(card);
+        this.events('restock');
       }
       return true;
     }
@@ -257,6 +270,7 @@ class Game {
 
   // tests for win and raises event
   hasWon() {
+    this.events('won');
     let f = this.foundations;
     return [0].length == 13 && 
       f[1].length == 13 && 
