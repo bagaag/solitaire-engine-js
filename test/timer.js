@@ -6,7 +6,6 @@ function events(type, obj) {
 }
 let game = new games.Game();
 game.addEventListener(events);
-game.start();
 let t = setTimeout(() => { 
   game.timer.cancel();
   console.log(game.timer.elapsed);

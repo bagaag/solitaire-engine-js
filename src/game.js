@@ -24,9 +24,6 @@ class Game {
       }
       this.tableau[i].last().faceUp = true;
     }
-  }
-
-  start() {
     this.timer = new timers.Timer(() => { this._event('tick'); });
     this._event('start');
   }
@@ -185,7 +182,13 @@ class Game {
     }
     if (from == 't') {
       let last = this.tableau[fromIx - 1].last();
-      if (last) last.faceUp = true;
+      if (last && !last.faceUp) {
+        last.faceUp = true;
+        this._event('reveal', {
+          tableau: fromIx,
+          card: last
+        });
+      }
     }
     this._event('move', { 
       from: from, 

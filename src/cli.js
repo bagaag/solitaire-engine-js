@@ -187,6 +187,7 @@ function draw() {
 function newGame() {
   game = new games.Game();
   table();
+  game.start();
 }
 
 // repopulates stock from waste pile
