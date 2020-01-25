@@ -24,5 +24,13 @@ class C extends S {
 }
 
 let c = new C();
-c.sub();
-
+//c.sub();
+// note, we can't use a reference to c.sub, have to wrap it in a func to maintain context
+let f = () => { c.sub(); }
+f();
+/*
+xx(f);
+function xx(FF) {
+  FF();
+}
+*/

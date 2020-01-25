@@ -1,7 +1,8 @@
 // provides a command line ux for the game engine
 
 const games = require('./game.js');
-let game;
+const scores = require('./score.js');
+let game, scoreMS, scoreVegas;
 const readline = require('readline');
 const rl = readline.createInterface({
   input: process.stdin,
@@ -20,7 +21,8 @@ exports.run = function() {
 let inputLoop = function () {
   rl.question('> ', function (ans) {
     if (ans == 'x') {
-      return rl.close();
+      process.exit();
+      //return rl.close();
     }
     else if (ans == 't') {
       table();
@@ -106,7 +108,14 @@ function deck() {
   pr(sb.join(''));
 }
 
+// display scores
+function score() {
+  pr(`Score: ${scoreMS.score}; $${scoreVegas.score}`);
+}
+
+// display the table
 function table() {
+    score();
     foundations();
     tableau();
     deck();
@@ -186,8 +195,9 @@ function draw() {
 // resets the game
 function newGame() {
   game = new games.Game();
+  scoreMS = new scores.ScoreMS(game, false);
+  scoreVegas = new scores.ScoreVegas(game);
   table();
-  game.start();
 }
 
 // repopulates stock from waste pile

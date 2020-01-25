@@ -37,6 +37,7 @@ class Game {
   }
 
   _event(type, data) {
+    //this.debug('event',type,data);
     this.events.forEach((e) => { 
       e(type, data);
     });
@@ -180,6 +181,13 @@ class Game {
     else {
       dest.push(card);
     }
+    this._event('move', { 
+      from: from, 
+      fromIx: fromIx,
+      fromCount: fromCount,
+      to: to,
+      toIx: toIx
+    });
     if (from == 't') {
       let last = this.tableau[fromIx - 1].last();
       if (last && !last.faceUp) {
@@ -190,13 +198,6 @@ class Game {
         });
       }
     }
-    this._event('move', { 
-      from: from, 
-      fromIx: fromIx,
-      fromCount: fromCount,
-      to: to,
-      toIx: toIx
-    });
     return true;
   }
 
@@ -229,49 +230,22 @@ class Game {
     }
   }
 
-  // adds the card to a foundation if possible and returns index of matched pile or 0 if 
-  addToFoundation(card) {
-    let ix, f;
-    if (card != undefined) {
-      for (const [ix, f] of this.foundations.entries()) {
-        let head = f.last();
-        let playAce = (f.length == 0 && card.rank == 1);
-        let playOther = false;
-        if (head != undefined) {
-          playOther = (head.suit == card.suit && card.rank == head.rank + 1);
-        }
-        if (playAce || playOther) {
-          f.push(card);
-          return ix + 1;
-        }
-      }
-    }
-    return 0;
-  }
-
   // plays what can be played to the foundations from tableau and waste
   autoMove() {
     let moves = [];
     let moved = false;
-    debugger;
     while (true) {
-      this.tableau.forEach((t,tix) => {
-        let fix = this.addToFoundation(t.last());
-        if (fix > 0) {
-          moves.push(['t',tix + 1,'f', fix]);
-          moved = true;
-          t.pop();
-          if (t.length > 0) {
-            t.last().faceUp = true;
+      for (const fix of this.foundations.keys()) {
+        for (const tix of this.tableau.keys()) {
+          if (this.move('t', tix + 1, 1, 'f', fix + 1)) {
+            moves.push(['t', tix + 1,'f', fix + 1]);
+            moved = true;
           }
         }
-      });
-      let c = this.waste.last();
-      let ix = this.addToFoundation(c);
-      if (ix > 0) {
-        moves.push(['w',undefined,'f',ix]);
-        moved = true;
-        this.waste.pop();
+        if (this.move('w', 0, 1, 'f', fix+1)) {
+          moves.push(['w', undefined, 'f', fix + 1]);
+          moved = true;
+        }
       }
       // exit if nothing more can be moved
       if (!moved) {
@@ -286,12 +260,15 @@ class Game {
 
   // tests for win and raises event
   hasWon() {
-    this._event('won');
     let f = this.foundations;
-    return [0].length == 13 && 
-      f[1].length == 13 && 
-      f[2].length == 13 && 
-      f[3].length == 13;
+    if ([0].length == 13 && 
+        f[1].length == 13 && 
+        f[2].length == 13 && 
+        f[3].length == 13) {
+      this._event('won');
+      return true;
+    }
+    return false;
   }
 
 }

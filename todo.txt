@@ -1,8 +1,12 @@
 X multiple event listeners
 
-scoring
+X scoring
 
-different deal modes
+X refactor autoMove
+
+deal 1 or 3 
+
+limit recycles
 
 full autoplay
 
