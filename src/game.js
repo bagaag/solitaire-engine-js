@@ -10,14 +10,23 @@ if (!Array.prototype.last) {
 
 class Game {
 
-  constructor() {
+  constructor(draw3 = false, passLimit = 0) {
+    // if true, draw 3 at a time instead of 1
+    this.draw3 = draw3;
+    // how many times can we recycle the deck, 0=unlimited
+    this.passLimit = passLimit;
+    // current pass through deck
+    this.pass = 1;
+    // event listeners
     this.events = [];
+
     this.deck = new cards.Deck();
     this.deck.shuffle();
     this.stock = this.deck.cards;
     this.tableau = this.arrays(7);
     this.foundations = this.arrays(4);
     this.waste = [];
+
     for (let i=0; i<7; i++) {
       for (let c=0; c<=i; c++) {
         this.tableau[i].push(this.stock.pop());
@@ -203,20 +212,28 @@ class Game {
 
   // moves a card from stock to waste, returns false if stock is empty
   draw() {
-    let card = this.stock.pop();
-    if (card) {
-      card.faceUp = true;
-      this.waste.push(card);
-      this._event('draw', { card: card });
-      return true;
-    } else {
-      return false;
+    if (this.stock.length > 0) {
+      let count = this.draw3 ? 3 : 1;
+      let ret = 0;
+      for (let i = 0; i < count; i++) {
+        let card = this.stock.pop();
+        if (card) {
+          ret++;
+          card.faceUp = true;
+          this.waste.push(card);
+          this._event('draw', { card: card, ix: i+1, count: count });
+        }
+      } 
+      return ret;
+    }
+    else {
+      return 0;
     }
   }
 
   // moves waste back into stock, returns false if nothing to restock or stock isnt empty
   restock() {
-    if (this.waste.length == 0 || this.stock.length > 0) {
+    if (this.pass >= this.passLimit || this.waste.length == 0 || this.stock.length > 0) {
       return false;
     }
     else {
@@ -226,6 +243,7 @@ class Game {
         this.stock.push(card);
         this._event('restock');
       }
+      this.pass++;
       return true;
     }
   }

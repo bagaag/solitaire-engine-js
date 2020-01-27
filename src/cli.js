@@ -98,8 +98,17 @@ function deck() {
   pr('Deck');
   let sb = [];
   let w = game.waste;
-  if (w.length > 0) {
-    sb.push('  ', w.last().toString(), ', ', w.length - 1, ' waste, ');
+  if (game.waste.length > 0) {
+    sb.push('  ');
+    let c = 0;
+    let draw = game.draw3 ? 3 : 1;
+    for (let i = game.waste.length - 1; c < draw; i--) {
+      if (game.waste[i]) {
+        sb.push(game.waste[i].toString(), ', ');
+      }
+      c++;
+    }
+    sb.push(Math.max(w.length - draw, 0), ' waste, ');
   }
   else {
     sb.push('  No waste, ');
@@ -186,7 +195,8 @@ function move(args) {
 
 // draws next card from stock
 function draw() {
-  if (game.draw()) {
+  let c = game.draw();
+  if (c > 0) {
     deck();
   }
   else pr('Stock is empty.');
@@ -194,7 +204,9 @@ function draw() {
 
 // resets the game
 function newGame() {
-  game = new games.Game();
+  let passes = 3;
+  let draw3 = true;
+  game = new games.Game(draw3, passes);
   scoreMS = new scores.ScoreMS(game, false);
   scoreVegas = new scores.ScoreVegas(game);
   table();
@@ -204,7 +216,15 @@ function newGame() {
 function restock() {
   if (game.restock()) {
     deck();
-  } else pr('Nothing to restock or stock is not empty.');
+  } else if (game.waste.length == 0) {
+    pr('Nothing to restock.')
+  }
+  else if (game.stock.length > 0) {
+    pr('Stock is not empty.');
+  }
+  else {
+    pr('Deck pass limit reached.');
+  }
 }
 
 // move cards from tableau and waste to foundations
