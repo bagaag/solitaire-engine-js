@@ -3,22 +3,23 @@
 const games = require('./game.js');
 const scores = require('./score.js');
 let game, scoreMS, scoreVegas;
-const readline = require('readline');
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 const pr = console.log;
+let readline, rl;
 
 // entry point
-exports.run = function() {
+function run() {
+  readline = require('readline');
+  rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
   newGame();
   pr('Enter h for help.');
   inputLoop();
 }
 
 // input loop
-let inputLoop = function () {
+function inputLoop () {
   rl.question('> ', function (ans) {
     if (ans == 'x') {
       process.exit();
@@ -203,9 +204,7 @@ function draw() {
 }
 
 // resets the game
-function newGame() {
-  let passes = 3;
-  let draw3 = true;
+function newGame(passes=0, draw3=false) {
   game = new games.Game(draw3, passes);
   scoreMS = new scores.ScoreMS(game, false);
   scoreVegas = new scores.ScoreVegas(game);
@@ -242,14 +241,30 @@ function autoMove() {
     });
     table();
     winCheck();
+    return true;
   }
   else {
     pr('No possible moves.');
+    return false;
   }
 }
 
 function winCheck() {
   if (game.hasWon()) {
     pr('You won!');
+    return true;
   }
+  return false;
+}
+
+module.exports = {
+  run: run,
+  move: move,
+  autoMove: autoMove,
+  draw: draw,
+  winCheck: winCheck,
+  newGame: newGame,
+  game: game,
+  scoreMS: scoreMS,
+  scoreVegas: scoreVegas
 }
