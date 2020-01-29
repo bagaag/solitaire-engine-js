@@ -8,18 +8,33 @@ class Npc {
 
   play() {
     this.cli.newGame(this.draw3, this.passes);
-    this.game = this.cli.game;
+    this.game = this.cli.game();
     while (true) {
-      let g = this.game;
+      let movedInPass = 0;
       let moved = this.cli.autoMove();
       let consolidated = this.consolidateTableaus();
-      if (!moved && !consolidated) {
-        break;
+      let played = this.playWaste();
+      if (!moved && !consolidated && !played) {
+        // draw
+        if (this.cli.draw()) {
+          this.playWaste();
+        }
+        // forfeit if no moves in entire pass
+        else if (movedInPass < this.game.pass) {
+          break;
+        }
+        else {
+          this.cli.restock();
+        }
+      }
+      else {
+        movedInPass = this.game.pass;
       }
     }
-    if (!this.cli.hasWon()) {
-      console.log('Forfeit!');
+    if (!this.cli.winCheck()) {
+      this.cli.pr('Forfeit!');
     }
+    return;
   }
 
   // returns first face up card in a given array of Cards
@@ -41,14 +56,21 @@ class Npc {
       let t = ts[i];
       let fix = this.firstFaceUp(t);
       let c = t[fix];
-      targetIx = this.findTarget(c);
+      targetIx = this.findTarget(c, i);
       if (targetIx) {
-        this.cli.move(`m t${i+1},${t.length - fix} t${targetIx}`);
-        consolidateTableaus();;
-        return true;
+        let m = `m t${i+1},${t.length - fix} t${targetIx}`;
+        if (this.move(m)) {
+          this.consolidateTableaus();;
+          return true;
+        }
       }
     }
     return false;
+  }
+
+  move(cmd) {
+    this.cli.pr('> ' + cmd);
+    this.cli.move(cmd);
   }
 
   // attempt to play the top waste card in a way that will lead to tableau consolidation
@@ -61,27 +83,36 @@ class Npc {
       let c = g.waste.last();
       targetIx = this.findTarget(c);
       if (targetIx) {
-        this.cli.move(`m w t${targetIx}`);
+        this.move(`m w t${targetIx}`);
         return true;
       }
     }
     return false;
   }
     
-  // returns 1-based index of tableau that can accept the given card, or undefined
-  findTarget(card) {
+  // returns 1-based index of tableau that can accept the 
+  // given card, or undefined; ignores the tableau at 
+  // given 0 based index
+  findTarget(card, ignoreIx) {
     let g = this.game;
     let ts = g.tableau;
     let targetIx;
     // for each tableau stack
     for (let i = 0; i < ts.length; i++) {
-      let t = ts[i];
-      let dest = t.last();
-      if (dest && 
-          card.suitVal()  % 2 == dest.suitVal() % 2 &&
-          card.rank != dest.rank - 1
-      ) {
-        return i+1;;
+      if (i != ignoreIx) {
+        let t = ts[i];
+        let dest = t.last();
+        // dest must exist
+        if (dest != undefined) {
+          // and be opposite color
+          if (card.suitVal() % 2 != dest.suitVal() % 2) {
+            // and be 1 rank smaller
+            if (card.rank == dest.rank - 1) {
+              this.cli.pr(card, dest);
+              return i+1;
+            }
+          }
+        }
       }
     }
     return undefined;

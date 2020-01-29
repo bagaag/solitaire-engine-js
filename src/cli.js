@@ -166,7 +166,7 @@ function move(args) {
     let m = args.match(moveRE);
     if (m == null) {
       pr('Invald move syntax.');
-      return;
+      return false;
     }
     let from = m[1];
     let fromIx = m[2];
@@ -185,12 +185,13 @@ function move(args) {
     }
     else {
       pr('Illegal move.');
-      return;
+      return false;
     }
 
     // display result
     table();
     winCheck();
+    return true;
   }
 }
 
@@ -199,8 +200,12 @@ function draw() {
   let c = game.draw();
   if (c > 0) {
     deck();
+    return true;
   }
-  else pr('Stock is empty.');
+  else {
+    pr('Stock is empty.');
+    return false;
+  }
 }
 
 // resets the game
@@ -215,6 +220,7 @@ function newGame(passes=0, draw3=false) {
 function restock() {
   if (game.restock()) {
     deck();
+    return true;
   } else if (game.waste.length == 0) {
     pr('Nothing to restock.')
   }
@@ -224,6 +230,7 @@ function restock() {
   else {
     pr('Deck pass limit reached.');
   }
+  return false;
 }
 
 // move cards from tableau and waste to foundations
@@ -264,7 +271,8 @@ module.exports = {
   draw: draw,
   winCheck: winCheck,
   newGame: newGame,
-  game: game,
+  game: () => { return game; },
   scoreMS: scoreMS,
-  scoreVegas: scoreVegas
+  scoreVegas: scoreVegas,
+  pr: pr
 }
