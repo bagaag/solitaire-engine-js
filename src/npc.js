@@ -77,15 +77,15 @@ class Npc {
   playDeck() {
     let g = this.game;
     if (g.waste.length > 0) {
-      this.cli.draw();
-    }
-    if (g.waste.length > 0) {
-      let c = g.waste.last();
-      targetIx = this.findTarget(c);
-      if (targetIx) {
-        this.move(`m w t${targetIx}`);
-        return true;
+      if (!this.cli.draw()) {
+        return false;
       }
+    }
+    let c = g.waste.last();
+    targetIx = this.findTarget(c);
+    if (targetIx) {
+      let rider = findRider(c, targetIx);
+      return true;
     }
     return false;
   }
@@ -105,7 +105,7 @@ class Npc {
         // dest must exist
         if (dest != undefined) {
           // and be opposite color
-          if (card.suitVal() % 2 != dest.suitVal() % 2) {
+          if (!g.sameColor(card, dest)) {
             // and be 1 rank smaller
             if (card.rank == dest.rank - 1) {
               this.cli.pr(card, dest);
@@ -118,6 +118,41 @@ class Npc {
     return undefined;
   }
 
+  // finds a tableau stack that can be a future consolidation if the given card is played from the deck
+  findRider(card, ignoreIx, ignoreIx2) {
+    let g = this.game;
+    let riders = [];
+    let shortestDistance = 13;
+    let closestRider;
+    g.tableau.forEach((t,tix) => {
+      if (tix == ignoreIx) continue;
+      if (ignoreIx2 != undefined && tix == ignoreIx2) continue;
+      if (t.length == 0) continue;
+      let riderCard = this.firstFaceUp(t);
+      if (riderCard.rank >= card.rank) continue;
+      if (!g.tableauCompatible(card, riderCard)) continue;
+      let distance = card.rank - riderCard.rank;
+      if (ignoreIx2 == undefined) {
+        let betterOption = this.findRider(riderCard, tix, ignoreIx);
+        if (betterOption != undefined) continue;
+      }
+      if (distance < shortestDistance) {
+        shortestDistance = distance;
+        closestRider = tix;
+      }
+    }
+    if (closestRider != undefined)
+  }
+
+}
+
+// potential future consolidations to compare with a 
+// potential deck to tableau move
+class Rider {
+  targetTableau;
+  targetDistance;
+  closestTableau;
+  closestDistance;
 }
 
 module.exports = {

@@ -14,9 +14,15 @@ can any of the tableaus be consolidated?
 can the stock card be played?
 - for each place it cam be played
 - king in a empty pile, go for it
-- for each tableau
-- would playing the stock here get us closer to consolidating this pile?
-- and is there not alrwady a better candidate for that consolidation?
+- for each other tableau
+- get first face up
+- would playing the stock there get us closer to consolidating this pile?
+  - is same polarity as target pile?
+  - is less than card in play
+- and is there not already a better candidate for that consolidation?
+  - for each tableau other than the two under consideration
+  - same polarity?
+  - top card < card in play and > consolidation card then pass 
 - if yes play the card there
 
 restart whole process afrer every move

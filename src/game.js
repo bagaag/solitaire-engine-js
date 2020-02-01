@@ -110,7 +110,7 @@ class Game {
       }
       else {
         // must alternate red/black suits
-        if (card.suitVal()  % 2 == dest.suitVal() % 2) {
+        if (this.sameColor(card, dest)) {
           return false;
         }
         // must be one rank smaller than the parent card
@@ -208,6 +208,11 @@ class Game {
       }
     }
     return true;
+  }
+
+  // returns true if two cards' suites are of the same color
+  sameColor(c1, c2) {
+    return c1.suitVal() % 2 != c2.suitVal() % 2;
   }
 
   // moves a card from stock to waste, returns false if stock is empty
