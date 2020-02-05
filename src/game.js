@@ -119,7 +119,7 @@ class Game {
         }
       }
     }
-    else {
+    else if (to == 'f') {
       // first card must be an ace
       if (!dest) {
         if (card.rank != 1) {
@@ -132,6 +132,9 @@ class Game {
           return false;
         }
       }
+    }
+    else {
+      return false;
     }
     return true;
   }
@@ -212,7 +215,14 @@ class Game {
 
   // returns true if two cards' suites are of the same color
   sameColor(c1, c2) {
-    return c1.suitVal() % 2 != c2.suitVal() % 2;
+    return c1.suitVal() % 2 == c2.suitVal() % 2;
+  }
+
+  // returns true if two cards could live in the same tableau stack based on suit
+  tableauCompatible(card1, card2) {
+    let samePolarity = (card1.rank % 2) == (card2.rank % 2);
+    let sameColor = this.sameColor(card1, card2);
+    return samePolarity && sameColor;
   }
 
   // moves a card from stock to waste, returns false if stock is empty

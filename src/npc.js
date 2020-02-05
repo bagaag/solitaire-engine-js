@@ -9,32 +9,34 @@ class Npc {
   play() {
     this.cli.newGame(this.draw3, this.passes);
     this.game = this.cli.game();
+    let movedInPass = false;
     while (true) {
-      let movedInPass = 0;
       let moved = this.cli.autoMove();
       let consolidated = this.consolidateTableaus();
-      let played = this.playWaste();
+      let played = this.playDeck();
       if (!moved && !consolidated && !played) {
         // draw
         if (this.cli.draw()) {
-          this.playWaste();
+          played = this.playDeck();
         }
-        // forfeit if no moves in entire pass
-        else if (movedInPass < this.game.pass) {
-          break;
-        }
-        else {
-          this.cli.restock();
-        }
+      }
+      if (moved || consolidated || played) {
+        movedInPass = true;
+      }
+      // forfeit if no moves in entire pass
+      else if (this.game.stock.length == 0 && this.waste.length > 0) {
+        this.cli.restock();
+      }
+      else if (this.game.stock.count == 0) {
+      }
+      if (!this.cli.winCheck()) {
+        this.cli.pr('Forfeit!');
+        break;
       }
       else {
-        movedInPass = this.game.pass;
+        break;
       }
     }
-    if (!this.cli.winCheck()) {
-      this.cli.pr('Forfeit!');
-    }
-    return;
   }
 
   // returns first face up card in a given array of Cards
@@ -54,6 +56,7 @@ class Npc {
     for (let i = 0; i < ts.length; i++) {
       // get the lowest face up card
       let t = ts[i];
+      if (t.length == 0) continue;
       let fix = this.firstFaceUp(t);
       let c = t[fix];
       targetIx = this.findTarget(c, i);
@@ -76,16 +79,16 @@ class Npc {
   // attempt to play the top waste card in a way that will lead to tableau consolidation
   playDeck() {
     let g = this.game;
-    if (g.waste.length > 0) {
+    if (g.waste.length == 0) {
       if (!this.cli.draw()) {
         return false;
       }
     }
     let c = g.waste.last();
-    targetIx = this.findTarget(c);
+    let targetIx = this.findTarget(c);
     if (targetIx) {
-      let rider = findRider(c, targetIx);
-      return true;
+      let rider = this.findRider(c, targetIx);
+      if (rider != undefined) return true;
     }
     return false;
   }
@@ -108,7 +111,7 @@ class Npc {
           if (!g.sameColor(card, dest)) {
             // and be 1 rank smaller
             if (card.rank == dest.rank - 1) {
-              this.cli.pr(card, dest);
+              //this.cli.pr(card, dest);
               return i+1;
             }
           }
@@ -119,31 +122,42 @@ class Npc {
   }
 
   // finds a tableau stack that can be a future consolidation if the given card is played from the deck
-  findRider(card, ignoreIx, ignoreIx2) {
+  findRider(card, ignoreIx) {
     let g = this.game;
     let riders = [];
     let shortestDistance = 13;
     let closestRider;
-    g.tableau.forEach((t,tix) => {
+    for (let tix = 0; tix < g.tableau.length; tix++) {
+      let t = g.tableau[tix];
       if (tix == ignoreIx) continue;
-      if (ignoreIx2 != undefined && tix == ignoreIx2) continue;
       if (t.length == 0) continue;
-      let riderCard = this.firstFaceUp(t);
+      let riderCard = t[this.firstFaceUp(t)];
       if (riderCard.rank >= card.rank) continue;
       if (!g.tableauCompatible(card, riderCard)) continue;
       let distance = card.rank - riderCard.rank;
-      if (ignoreIx2 == undefined) {
-        let betterOption = this.findRider(riderCard, tix, ignoreIx);
-        if (betterOption != undefined) continue;
-      }
+      let closerHorse = this.findCloserHorse(riderCard, distance, tix, ignoreIx);
+      if (closerHorse != undefined) continue;
       if (distance < shortestDistance) {
         shortestDistance = distance;
         closestRider = tix;
       }
     }
-    if (closestRider != undefined)
+    return closestRider; 
   }
 
+  findCloserHorse (rider, distance, ignoreIx, ignoreIx2) {
+    let g = this.game;
+    for (let tix = 0; tix < g.tableau.length; tix++) {
+      let t = g.tableau[tix];
+      if (tix == ignoreIx || tix == ignoreIx2) continue;
+      if (t.length == 0) continue;
+      let horse = t[this.firstFaceUp(t)];
+      if (!g.tableauCompatible(horse, rider)) continue;
+      if (horse.rank <= rider.rank) continue;
+      if ((horse.rank - rider.rank) < distance) return tix;
+    }
+    return undefined;
+  }
 }
 
 // potential future consolidations to compare with a 
