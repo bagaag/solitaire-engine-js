@@ -274,5 +274,6 @@ module.exports = {
   game: () => { return game; },
   scoreMS: scoreMS,
   scoreVegas: scoreVegas,
-  pr: pr
+  pr: pr,
+  restock: restock
 }

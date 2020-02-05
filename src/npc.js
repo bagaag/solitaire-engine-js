@@ -9,31 +9,35 @@ class Npc {
   play() {
     this.cli.newGame(this.draw3, this.passes);
     this.game = this.cli.game();
+    this.cli.draw();
     let movedInPass = false;
     while (true) {
       let moved = this.cli.autoMove();
       let consolidated = this.consolidateTableaus();
       let played = this.playDeck();
-      if (!moved && !consolidated && !played) {
+      if (!played) {
         // draw
-        if (this.cli.draw()) {
-          played = this.playDeck();
+        if (!this.cli.draw()) {
+          this.cli.pr('draw=false ' + this.game.stock.length + ',' + this.game.waste.length);
         }
       }
       if (moved || consolidated || played) {
         movedInPass = true;
       }
-      // forfeit if no moves in entire pass
-      else if (this.game.stock.length == 0 && this.waste.length > 0) {
+      this.cli.pr(this.game.stock.length + ',' + this.game.waste.length);
+      if (this.game.stock.length == 0 && this.game.waste.length > 0) {
+        if (!movedInPass) {
+          this.cli.pr('Forfeit!');
+          break;
+        }
         this.cli.restock();
+        this.cli.draw();
+        movedInPass = false;
+        continue;
       }
-      else if (this.game.stock.count == 0) {
-      }
-      if (!this.cli.winCheck()) {
-        this.cli.pr('Forfeit!');
-        break;
-      }
-      else {
+      // forfeit if no moves in entire pass
+      if (this.cli.winCheck()) {
+        this.cli.pr('You won!');
         break;
       }
     }
@@ -78,17 +82,17 @@ class Npc {
 
   // attempt to play the top waste card in a way that will lead to tableau consolidation
   playDeck() {
-    let g = this.game;
-    if (g.waste.length == 0) {
-      if (!this.cli.draw()) {
-        return false;
-      }
-    }
-    let c = g.waste.last();
+    if (this.game.waste.length == 0) return false;
+    let c = this.game.waste.last();
     let targetIx = this.findTarget(c);
+    this.cli.pr('playDeck targetIx=' + targetIx);
     if (targetIx) {
       let rider = this.findRider(c, targetIx);
-      if (rider != undefined) return true;
+      this.cli.pr('playDeck rider=' + rider);
+      if (rider != undefined)  {
+        this.move('m w t' + targetIx);
+        return true;
+      }
     }
     return false;
   }
@@ -158,15 +162,6 @@ class Npc {
     }
     return undefined;
   }
-}
-
-// potential future consolidations to compare with a 
-// potential deck to tableau move
-class Rider {
-  targetTableau;
-  targetDistance;
-  closestTableau;
-  closestDistance;
 }
 
 module.exports = {
