@@ -1,45 +1,64 @@
 // computer plays solitaire
 class Npc {
-  cli = require('./cli.js');
   constructor(opts) {
-    let draw3 = opts.draw3 || false;
-    let passes = opts.passes || 0;
+    this.draw3 = opts.draw3 || false;
+    this.passes = opts.passes || 0;
+    this.cli = opts.cli || require('./cli.js');
   }
 
-  play() {
+  playTurn() {
+    let result = { 
+      foundation: false, consolidated: false, played: false, 
+      finished: false, won: false, draw: false, restock: false 
+    };
+    let cli = this.cli;
+    let g = this.game;
+    result.foundation = cli.autoMove();
+    result.consolidated = this.consolidateTableaus();
+    result.played = this.playDeck();
+    if (!result.played) {
+      // draw
+      if (cli.draw()) {
+        result.draw = true;
+      } else {
+        cli.pr('draw=false ' + g.stock.length + ',' + g.waste.length);
+      }
+    }
+    if (result.moved || result.consolidated || result.played) {
+      this.movedInPass = true;
+    }
+    cli.pr(g.stock.length + ',' + g.waste.length);
+    if (g.stock.length == 0 && g.waste.length > 0) {
+      if (!this.movedInPass) {
+        cli.pr('Forfeit!');
+        result.finished = true;
+        result.won = false;
+        return result;
+      }
+      cli.restock();
+      cli.draw();
+      this.movedInPass = false;
+      result.draw = true;
+      result.restock = true;
+    }
+    // forfeit if no moves in entire pass
+    else if (cli.winCheck()) {
+      cli.pr('You won!');
+      result.finished = true;
+      result.won = true;
+    }
+    return result;
+  }
+
+  playGame() {
     this.cli.newGame(this.draw3, this.passes);
     this.game = this.cli.game();
     this.cli.draw();
-    let movedInPass = false;
+    this.movedInPass = false;
     while (true) {
-      let moved = this.cli.autoMove();
-      let consolidated = this.consolidateTableaus();
-      let played = this.playDeck();
-      if (!played) {
-        // draw
-        if (!this.cli.draw()) {
-          this.cli.pr('draw=false ' + this.game.stock.length + ',' + this.game.waste.length);
-        }
-      }
-      if (moved || consolidated || played) {
-        movedInPass = true;
-      }
-      this.cli.pr(this.game.stock.length + ',' + this.game.waste.length);
-      if (this.game.stock.length == 0 && this.game.waste.length > 0) {
-        if (!movedInPass) {
-          this.cli.pr('Forfeit!');
-          break;
-        }
-        this.cli.restock();
-        this.cli.draw();
-        movedInPass = false;
-        continue;
-      }
-      // forfeit if no moves in entire pass
-      if (this.cli.winCheck()) {
-        this.cli.pr('You won!');
-        break;
-      }
+      let result = this.playTurn();
+      this.cli.pr(result);
+      if (result.finished) break;
     }
   }
 
