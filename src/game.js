@@ -9,7 +9,15 @@ if (!Array.prototype.last) {
 };
 
 class Game {
-
+  static EV = {
+    TICK: 'tick',
+    START: 'start',
+    MOVE: 'move',
+    REVEAL: 'reveal',
+    DRAW: 'draw',
+    RESTOCK: 'restock',
+    WON: 'won'
+  };
   constructor(draw3 = false, passLimit = 0) {
     // if true, draw 3 at a time instead of 1
     this.draw3 = draw3;
@@ -33,8 +41,8 @@ class Game {
       }
       this.tableau[i].last().faceUp = true;
     }
-    this.timer = new timers.Timer(() => { this._event('tick'); });
-    this._event('start');
+    this.timer = new timers.Timer(() => { this._event(Game.EV.TICK); });
+    this._event(Game.EV.START);
   }
 
   debug(...args) {
@@ -160,7 +168,16 @@ class Game {
 
   // moves a card from waste, tableau or foundation to a tableau or foundation. Returns true if successful
   move(from, fromIx, fromCount, to, toIx) {
+    let evdata = {
+      success: false,
+      from: from, 
+      fromIx: fromIx,
+      fromCount: fromCount,
+      to: to,
+      toIx: toIx
+    };
     if (!this.canMove(from, fromIx, fromCount, to, toIx)) {
+      this._event(Game.EV.MOVE, evdata); 
       return false;
     }
     let card = false;
@@ -183,6 +200,7 @@ class Game {
       dest = this.foundations[toIx - 1];
     }
     if (!card || !dest) {
+      this._event(Game.EV.MOVE, evdata); 
       return false;
     }
     if (Array.isArray(card)) {
@@ -193,18 +211,13 @@ class Game {
     else {
       dest.push(card);
     }
-    this._event('move', { 
-      from: from, 
-      fromIx: fromIx,
-      fromCount: fromCount,
-      to: to,
-      toIx: toIx
-    });
+    evdata.success = true;
+    this._event(Game.EV.MOVE, evdata); 
     if (from == 't') {
       let last = this.tableau[fromIx - 1].last();
       if (last && !last.faceUp) {
         last.faceUp = true;
-        this._event('reveal', {
+        this._event(Game.EV.RGame.EVEAL, {
           tableau: fromIx,
           card: last
         });
@@ -236,7 +249,7 @@ class Game {
           ret++;
           card.faceUp = true;
           this.waste.push(card);
-          this._event('draw', { card: card, ix: i+1, count: count });
+          this._event(Game.EV.DRAW, { card: card, ix: i+1, count: count });
         }
       } 
       return ret;
@@ -249,6 +262,7 @@ class Game {
   // moves waste back into stock, returns false if nothing to restock or stock isnt empty
   restock() {
     if (this.pass >= this.passLimit || this.waste.length == 0 || this.stock.length > 0) {
+      this._event(Game.EV.RESTOCK, { success: false, pass: this.pass });
       return false;
     }
     else {
@@ -256,39 +270,11 @@ class Game {
         let card = this.waste.pop();
         card.faceUp = false;
         this.stock.push(card);
-        this._event('restock');
       }
       this.pass++;
+      this._event(Game.EV.RESTOCK, { success: true, pass: this.pass});
       return true;
     }
-  }
-
-  // plays what can be played to the foundations from tableau and waste
-  autoMove() {
-    let moves = [];
-    let moved = false;
-    while (true) {
-      for (const fix of this.foundations.keys()) {
-        for (const tix of this.tableau.keys()) {
-          if (this.move('t', tix + 1, 1, 'f', fix + 1)) {
-            moves.push(['t', tix + 1,'f', fix + 1]);
-            moved = true;
-          }
-        }
-        if (this.move('w', 0, 1, 'f', fix+1)) {
-          moves.push(['w', undefined, 'f', fix + 1]);
-          moved = true;
-        }
-      }
-      // exit if nothing more can be moved
-      if (!moved) {
-        break;
-      } 
-      else {
-        moved = false;
-      }
-    }
-    return moves;
   }
 
   // tests for win and raises event
@@ -298,7 +284,7 @@ class Game {
         f[1].length == 13 && 
         f[2].length == 13 && 
         f[3].length == 13) {
-      this._event('won');
+      this._event(Game.EV.WON);
       return true;
     }
     return false;

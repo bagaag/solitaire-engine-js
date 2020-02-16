@@ -1,49 +1,46 @@
 // computer plays solitaire
 class Npc {
-  constructor(opts) {
-    this.draw3 = opts.draw3 || false;
-    this.passes = opts.passes || 0;
-    this.cli = opts.cli || require('./cli.js');
+  constructor(game) {
+    this.game = game;
   }
 
   playTurn() {
     let result = { 
-      foundation: false, consolidated: false, played: false, 
-      finished: false, won: false, draw: false, restock: false 
+      foundation: false, 
+      consolidated: false, 
+      played: false, 
+      finished: false, 
+      won: false, 
+      draw: false, 
+      restock: false
     };
-    let cli = this.cli;
     let g = this.game;
-    result.foundation = cli.autoMove();
+    result.foundation = this.autoFoundation();
     result.consolidated = this.consolidateTableaus();
     result.played = this.playDeck();
     if (!result.played) {
       // draw
-      if (cli.draw()) {
+      if (g.draw() > 0) {
         result.draw = true;
-      } else {
-        cli.pr('draw=false ' + g.stock.length + ',' + g.waste.length);
       }
     }
     if (result.moved || result.consolidated || result.played) {
       this.movedInPass = true;
     }
-    cli.pr(g.stock.length + ',' + g.waste.length);
     if (g.stock.length == 0 && g.waste.length > 0) {
       if (!this.movedInPass) {
-        cli.pr('Forfeit!');
         result.finished = true;
         result.won = false;
         return result;
       }
-      cli.restock();
-      cli.draw();
+      g.restock();
+      g.draw();
       this.movedInPass = false;
       result.draw = true;
       result.restock = true;
     }
     // forfeit if no moves in entire pass
-    else if (cli.winCheck()) {
-      cli.pr('You won!');
+    else if (g.hasWon()) {
       result.finished = true;
       result.won = true;
     }
@@ -51,15 +48,41 @@ class Npc {
   }
 
   playGame() {
-    this.cli.newGame(this.draw3, this.passes);
-    this.game = this.cli.game();
-    this.cli.draw();
+    this.game.draw();
     this.movedInPass = false;
     while (true) {
       let result = this.playTurn();
-      this.cli.pr(result);
       if (result.finished) break;
     }
+  }
+
+  // plays what can be played to the foundations from tableau and waste
+  autoFoundation() {
+    let moves = [];
+    let moved = false;
+    let g = this.game;
+    while (true) {
+      for (const fix of g.foundations.keys()) {
+        for (const tix of g.tableau.keys()) {
+          if (g.move('t', tix + 1, 1, 'f', fix + 1)) {
+            moves.push(['t', tix + 1,'f', fix + 1]);
+            moved = true;
+          }
+        }
+        if (g.move('w', 0, 1, 'f', fix+1)) {
+          moves.push(['w', undefined, 'f', fix + 1]);
+          moved = true;
+        }
+      }
+      // exit if nothing more can be moved
+      if (!moved) {
+        break;
+      } 
+      else {
+        moved = false;
+      }
+    }
+    return moves;
   }
 
   // returns first face up card in a given array of Cards
@@ -85,7 +108,7 @@ class Npc {
       targetIx = this.findTarget(c, i);
       if (targetIx) {
         let m = `m t${i+1},${t.length - fix} t${targetIx}`;
-        if (this.move(m)) {
+        if (g.move(m)) {
           this.consolidateTableaus();;
           return true;
         }
@@ -94,22 +117,15 @@ class Npc {
     return false;
   }
 
-  move(cmd) {
-    this.cli.pr('> ' + cmd);
-    this.cli.move(cmd);
-  }
-
   // attempt to play the top waste card in a way that will lead to tableau consolidation
   playDeck() {
     if (this.game.waste.length == 0) return false;
     let c = this.game.waste.last();
     let targetIx = this.findTarget(c);
-    this.cli.pr('playDeck targetIx=' + targetIx);
     if (targetIx) {
       let rider = this.findRider(c, targetIx);
-      this.cli.pr('playDeck rider=' + rider);
       if (rider != undefined)  {
-        this.move('m w t' + targetIx);
+        this.game.move('m w t' + targetIx);
         return true;
       }
     }
@@ -138,6 +154,9 @@ class Npc {
               return i+1;
             }
           }
+        }
+        else if (card.rank == 13) {
+          return i+1;
         }
       }
     }

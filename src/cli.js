@@ -3,15 +3,23 @@
 const games = require('./game.js');
 const scores = require('./score.js');
 const npcs = require('./npc.js');
+const readline = require('readline');
 
 class Cli {
-  game, scoreMS, scoreVegas, npc;
+  game;
+  scoreMS;
+  scoreVegas;
+  npc;
   pr = console.log;
-  readline, rl;
+  readline;
+  rl;
+  moveRE = /m\s+([wtf])([1-7)?,?([1-9]*)\s+([tf])([1-7])/;
+
+  constructor() {
+  }
 
   // entry point
   run() {
-    this.readline = require('readline');
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
@@ -23,7 +31,7 @@ class Cli {
 
   // input loop
   inputLoop () {
-    this.rl.question('> ', function (ans) {
+    this.rl.question('> ', (ans) => {
       if (ans == 'x') {
         process.exit();
       }
@@ -37,31 +45,31 @@ class Cli {
         this.draw();
       } 
       else if (ans == 'r') {
-        restock();
+        this.restock();
       }
       else if (ans == 'af') {
-        autoMove();
+        this.autoFoundation();
       }
       else if (ans == 'p') {
-        npcMove();
+        this.npcMove();
       }
       else if (ans == 'N') {
-        newGame();
+        this.newGame();
       }
       else if (ans == 'h m') {
-        helpMove();
+        this.helpMove();
       }
       else {
-        help();
+        this.help();
       }
-      inputLoop();
+      this.inputLoop();
     });
-  };
+  }
 
   // output tableau display
-  function tableau() {
-    pr ('Tableau');
-    game.tableau.forEach((t,ix) => {
+  tableau() {
+    this.pr ('Tableau');
+    this.game.tableau.forEach((t,ix) => {
       let sb = ['  ',ix+1,'. '];
       if (t.length > 0) {
         let isFaceUp = (c) => c.faceUp;
@@ -80,15 +88,15 @@ class Cli {
           sb.pop(); // drop trailing comma
         }
       }
-      pr(sb.join(''));
+      this.pr(sb.join(''));
     });
   }
 
   // display foundations
-  function foundations() {
-    pr('Foundations');
+  foundations() {
+    this.pr('Foundations');
     let sb = [];
-    game.foundations.forEach((f,ix) => {
+    this.game.foundations.forEach((f,ix) => {
       if (f.length > 0) {
         sb.push('  ');
         sb.push(f.last().toString());
@@ -96,21 +104,21 @@ class Cli {
         sb.push("  [---]");
       }
     });
-    pr(sb.join(''));
+    this.pr(sb.join(''));
   }
 
   // display deck
-  function deck() {
-    pr('Deck');
+  deck() {
+    this.pr('Deck');
     let sb = [];
-    let w = game.waste;
-    if (game.waste.length > 0) {
+    let w = this.game.waste;
+    if (w.length > 0) {
       sb.push('  ');
       let c = 0;
-      let draw = game.draw3 ? 3 : 1;
-      for (let i = game.waste.length - 1; c < draw; i--) {
-        if (game.waste[i]) {
-          sb.push(game.waste[i].toString(), ', ');
+      let draw = this.game.draw3 ? 3 : 1;
+      for (let i = w.length - 1; c < draw; i--) {
+        if (w[i]) {
+          sb.push(w[i].toString(), ', ');
         }
         c++;
       }
@@ -119,58 +127,55 @@ class Cli {
     else {
       sb.push('  No waste, ');
     }
-    sb.push(game.stock.length + ' stock');
-    pr(sb.join(''));
+    sb.push(this.game.stock.length + ' stock');
+    this.pr(sb.join(''));
   }
 
   // display scores
-  function score() {
-    pr(`Score: ${scoreMS.score}; $${scoreVegas.score}`);
+  score() {
+    this.pr(`Score: ${this.scoreMS.score}; $${this.scoreVegas.score}`);
   }
 
   // display the table
-  function table() {
-      score();
-      foundations();
-      tableau();
-      deck();
+  table() {
+      this.score();
+      this.foundations();
+      this.tableau();
+      this.deck();
   }
 
   // display help
-  function help() {
-    pr("t: show table");
-    pr("d: draw the next card from stock");
-    pr("m [from: w|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
-    pr("r: restock from waste pile");
-    pr('a: move cards from tableau and waste to foundations');
-    pr("N: new game");
-    pr("x: exit");
+  help() {
+    this.pr("t: show table");
+    this.pr("d: draw the next card from stock");
+    this.pr("m [from: w|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
+    this.pr("r: restock from waste pile");
+    this.pr('a: move cards from tableau and waste to foundations');
+    this.pr("N: new game");
+    this.pr("x: exit");
   }
 
-  function helpMove() {
-    pr("Moving cards:");
-    pr("> m [from] [to]");
-    pr("'m' moves a card, or cards, from waste, a foundation or tableau to a foundation or tableau.");
-    pr("[from]: w|f1-f4|t1-t7,n where w is the top waste card, f is one of the 4 foundations and t is one of the tableaus. ',n' optionally specifies how many cards to move from a tableau, default is 1");
-    pr("[to]: f1-f4|t1-t7");
-    pr("- ex. move the top waste card to the 2nd tableau: m w t2");
-    pr("- ex. move two cards from the 1st tableau to the 3rd tableau: m t1,2 t3");
-    pr("- ex. move one card from 4th tableau to the 2nd foundation: m t4 f2");
+  helpMove() {
+    this.pr("Moving cards:");
+    this.pr("> m [from] [to]");
+    this.pr("'m' moves a card, or cards, from waste, a foundation or tableau to a foundation or tableau.");
+    this.pr("[from]: w|f1-f4|t1-t7,n where w is the top waste card, f is one of the 4 foundations and t is one of the tableaus. ',n' optionally specifies how many cards to move from a tableau, default is 1");
+    this.pr("[to]: f1-f4|t1-t7");
+    this.pr("- ex. move the top waste card to the 2nd tableau: m w t2");
+    this.pr("- ex. move two cards from the 1st tableau to the 3rd tableau: m t1,2 t3");
+    this.pr("- ex. move one card from 4th tableau to the 2nd foundation: m t4 f2");
   }
-
-  // parser for move commands
-  const moveRE = /m\s+([wtf])([1-7)?,?([1-9]*)\s+([tf])([1-7])/;
 
   // validate m command and  moves a card
-  function move(args) {
+  move(args) {
     if (args == 'm') {
-      moveAuto();
+      this.moveAuto();
     }
     else {
       // parse arguments
-      let m = args.match(moveRE);
+      let m = args.match(this.moveRE);
       if (m == null) {
-        pr('Invald move syntax.');
+        this.pr('Invald move syntax.');
         return false;
       }
       let from = m[1];
@@ -185,107 +190,103 @@ class Cli {
       let toIx = m[4];
         
       // move the card
-      if (game.move(from, fromIx, fromCount, to, toIx)) {
-        pr('Moved ' + args);
+      if (this.game.move(from, fromIx, fromCount, to, toIx)) {
+        this.pr('Moved ' + args);
       }
       else {
-        pr('Illegal move.');
+        this.pr('Illegal move.');
         return false;
       }
 
       // display result
-      table();
-      winCheck();
+      this.table();
+      this.winCheck();
       return true;
     }
   }
 
   // draws next card from stock
-  function draw() {
-    let c = game.draw();
+  draw() {
+    let c = this.game.draw();
     if (c > 0) {
-      deck();
+      this.deck();
       return true;
     }
     else {
-      pr('Stock is empty.');
+      this.pr('Stock is empty.');
       return false;
     }
   }
 
   // resets the game
-  function newGame(passes=0, draw3=false) {
-    game = new games.Game(draw3, passes);
-    scoreMS = new scores.ScoreMS(game, false);
-    scoreVegas = new scores.ScoreVegas(game);
-    npc = new npcs.Npc({ cli: cli });
-    table();
+  newGame(passes=0, draw3=false) {
+    this.game = new games.Game(draw3, passes);
+    this.game.addEventListener((ev,data) => { this.gameEvent(ev,data); });
+    this.scoreMS = new scores.ScoreMS(this.game, false);
+    this.scoreVegas = new scores.ScoreVegas(this.game);
+    this.npc = new npcs.Npc(this.game);
+    this.table();
   }
 
   // repopulates stock from waste pile
-  function restock() {
-    if (game.restock()) {
-      deck();
+  restock() {
+    if (this.game.restock()) {
+      this.deck();
       return true;
-    } else if (game.waste.length == 0) {
-      pr('Nothing to restock.')
+    } else if (this.game.waste.length == 0) {
+      this.pr('Nothing to restock.')
     }
-    else if (game.stock.length > 0) {
-      pr('Stock is not empty.');
+    else if (this.game.stock.length > 0) {
+      this.pr('Stock is not empty.');
     }
     else {
-      pr('Deck pass limit reached.');
+      this.pr('Deck pass limit reached.');
     }
     return false;
   }
 
   // move cards from tableau and waste to foundations
-  function autoMove() {
-    let moves = game.autoMove();
+  autoFoundation() {
+    let moves = this.game.autoFoundation();
     if (moves.length > 0) {
-      pr('Auto Moves');
+      this.pr('Auto Moves');
       moves.forEach((m) => {
         if (m[0] == 't') {
-          pr(`  t${m[1]} f${m[3]}`);
+          this.pr(`  t${m[1]} f${m[3]}`);
         }
         else {
-          pr(`  w f${m[3]}`);
+          this.pr(`  w f${m[3]}`);
         }
       });
-      table();
-      winCheck();
+      this.table();
+      this.winCheck();
       return true;
     }
     else {
-      pr('No possible moves.');
+      this.pr('No possible moves.');
       return false;
     }
   }
 
-  function npcMove() {
-    console.log(npc);
-    npc.play();
+  // performs a single round by npc
+  npcMove() {
+    this.npc.playTurn();
   }
 
-  function winCheck() {
-    if (game.hasWon()) {
-      pr('You won!');
+  winCheck() {
+    if (this.game.hasWon()) {
+      this.pr('You won!');
       return true;
     }
     return false;
   }
+
+  // responds to events raised by gae
+  gameEvent(type, data) {
+    console.log('Event: ' + type);
+  }
 }
 
 module.exports = {
-  run: run,
-  move: move,
-  autoMove: autoMove,
-  draw: draw,
-  winCheck: winCheck,
-  newGame: newGame,
-  game: () => { return game; },
-  scoreMS: scoreMS,
-  scoreVegas: scoreVegas,
-  pr: pr,
-  restock: restock
+  Cli: Cli
 }
