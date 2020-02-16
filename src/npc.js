@@ -129,7 +129,7 @@ class Npc {
     if (targetIx) {
       let rider = this.findRider(c, targetIx);
       if (rider != undefined)  {
-        this.game.move('m w t' + targetIx);
+        this.game.move('w', undefined, 1, 't', targetIx);
         return true;
       }
     }
