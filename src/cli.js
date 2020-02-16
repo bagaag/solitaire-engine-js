@@ -11,20 +11,20 @@ class Cli {
   scoreVegas;
   npc;
   pr = console.log;
-  readline;
   rl;
   moveRE = /m\s+([wtf])([1-7)?,?([1-9]*)\s+([tf])([1-7])/;
+  silenceEvents = false;
 
   constructor() {
-  }
-
-  // entry point
-  run() {
     this.rl = readline.createInterface({
       input: process.stdin,
       output: process.stdout
     });
     this.newGame();
+  }
+
+  // entry point
+  run() {
     this.pr('Enter h for help.');
     this.inputLoop();
   }
@@ -47,7 +47,7 @@ class Cli {
       else if (ans == 'r') {
         this.restock();
       }
-      else if (ans == 'af') {
+      else if (ans == 'a') {
         this.autoFoundation();
       }
       else if (ans == 'p') {
@@ -74,12 +74,14 @@ class Cli {
       if (t.length > 0) {
         let isFaceUp = (c) => c.faceUp;
         let firstFaceUp = t.findIndex(isFaceUp);
+        // during a move there is no face up card between the move and the reveal, so assume the last card is face up in this case
+        if (firstFaceUp == -1) firstFaceUp = t.length - 1;
         if (firstFaceUp > 0) {
           sb.push(firstFaceUp,' fd, ');
         }
         let dropTail = false;
         for (let i = 0; i < t.length; i++) {
-          if (t[i].faceUp) {
+          if (t[i].faceUp || i == t.length - 1) {
             sb.push(t[i],', ');
             dropTail = true;
           }
@@ -247,7 +249,9 @@ class Cli {
 
   // move cards from tableau and waste to foundations
   autoFoundation() {
-    let moves = this.game.autoFoundation();
+    let result = false;
+    this.silenceEvents = true;
+    let moves = this.npc.autoFoundation();
     if (moves.length > 0) {
       this.pr('Auto Moves');
       moves.forEach((m) => {
@@ -260,12 +264,13 @@ class Cli {
       });
       this.table();
       this.winCheck();
-      return true;
+      result = true;
     }
     else {
       this.pr('No possible moves.');
-      return false;
     }
+    this.silenceEvents = false;
+    return result;
   }
 
   // performs a single round by npc
@@ -283,7 +288,11 @@ class Cli {
 
   // responds to events raised by gae
   gameEvent(type, data) {
-    console.log('Event: ' + type);
+    if (this.silenceEvents) return;
+    console.log('Event: ' + type, data);
+    if ((type == 'move' && data.success) || type == 'draw') {
+      this.table();
+    }
   }
 }
 

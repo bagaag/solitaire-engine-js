@@ -217,7 +217,7 @@ class Game {
       let last = this.tableau[fromIx - 1].last();
       if (last && !last.faceUp) {
         last.faceUp = true;
-        this._event(Game.EV.RGame.EVEAL, {
+        this._event(Game.EV.REVEAL, {
           tableau: fromIx,
           card: last
         });

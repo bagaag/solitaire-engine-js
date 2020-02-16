@@ -64,12 +64,14 @@ class Npc {
     while (true) {
       for (const fix of g.foundations.keys()) {
         for (const tix of g.tableau.keys()) {
-          if (g.move('t', tix + 1, 1, 'f', fix + 1)) {
+          if (g.canMove('t', tix + 1, 1, 'f', fix + 1)) {
+            g.move('t', tix + 1, 1, 'f', fix + 1);
             moves.push(['t', tix + 1,'f', fix + 1]);
             moved = true;
           }
         }
-        if (g.move('w', 0, 1, 'f', fix+1)) {
+        if (g.canMove('w', 0, 1, 'f', fix+1)) {
+          g.move('w', 0, 1, 'f', fix+1);
           moves.push(['w', undefined, 'f', fix + 1]);
           moved = true;
         }
@@ -105,10 +107,12 @@ class Npc {
       if (t.length == 0) continue;
       let fix = this.firstFaceUp(t);
       let c = t[fix];
+      // don't bother moving a king that's at the top of the stack
+      if (c.rank == 13 && t[0].rank == 13) continue; 
+      // find a better home
       targetIx = this.findTarget(c, i);
       if (targetIx) {
-        let m = `m t${i+1},${t.length - fix} t${targetIx}`;
-        if (g.move(m)) {
+        if (g.move('t', i+1, t.length - fix, 't', targetIx)) {
           this.consolidateTableaus();;
           return true;
         }
