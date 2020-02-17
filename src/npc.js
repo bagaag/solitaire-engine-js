@@ -113,6 +113,7 @@ class Npc {
       targetIx = this.findTarget(c, i);
       if (targetIx) {
         if (g.move('t', i+1, t.length - fix, 't', targetIx)) {
+          this.autoFoundation();
           this.consolidateTableaus();;
           return true;
         }
