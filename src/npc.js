@@ -4,6 +4,9 @@ class Npc {
     this.game = game;
   }
 
+  // completes a single draw from the stock surrounded
+  // by two attempts to play the foundation and consolidate
+  // the tableaus
   playTurn() {
     let result = { 
       foundation: false, 
@@ -22,12 +25,20 @@ class Npc {
       // draw
       if (g.draw() > 0) {
         result.draw = true;
+        result.foundation = result.foundation.concat(this.autoFoundation());
+        result.consolidated = result.consolidated || this.consolidateTableaus();
+        result.played = result.played || this.playDeck();
       }
     }
-    if (result.moved || result.consolidated || result.played) {
+    if (result.foundation.length > 0 || result.consolidated || result.played) {
       this.movedInPass = true;
     }
-    if (g.stock.length == 0 && g.waste.length > 0) {
+    if (g.pass > 25) {
+      // safety check
+      result.finished = true;
+      console.log('PASS > 25; FORCE QUITTING');
+    }
+    else if (g.stock.length == 0 && g.waste.length > 0) {
       if (!this.movedInPass) {
         result.finished = true;
         result.won = false;
@@ -48,7 +59,6 @@ class Npc {
   }
 
   playGame() {
-    this.game.draw();
     this.movedInPass = false;
     while (true) {
       let result = this.playTurn();

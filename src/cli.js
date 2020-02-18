@@ -53,6 +53,9 @@ class Cli {
       else if (ans == 'p') {
         this.npcMove();
       }
+      else if (ans == 'P') {
+        this.npcGame();
+      }
       else if (ans == 'N') {
         this.newGame();
       }
@@ -129,7 +132,9 @@ class Cli {
     else {
       sb.push('  No waste, ');
     }
-    sb.push(this.game.stock.length + ' stock');
+    sb.push(this.game.stock.length);
+    sb.push(' stock, pass ');
+    sb.push(this.game.pass);
     this.pr(sb.join(''));
   }
 
@@ -153,6 +158,8 @@ class Cli {
     this.pr("m [from: w|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
     this.pr("r: restock from waste pile");
     this.pr('a: move cards from tableau and waste to foundations');
+    this.pr('p: plays cards to foundation, consolidates tableaus and draws from stock');
+    this.pr('P: plays the rest of the game in auto mode');
     this.pr("N: new game");
     this.pr("x: exit");
   }
@@ -209,7 +216,9 @@ class Cli {
 
   // draws next card from stock
   draw() {
+    this.silenceEvents = true;
     let c = this.game.draw();
+    this.silenceEvents = false;
     if (c > 0) {
       this.deck();
       return true;
@@ -278,6 +287,11 @@ class Cli {
     this.npc.playTurn();
   }
 
+  // plays the rest of the game via npc
+  npcGame() {
+    this.npc.playGame();
+  }
+
   winCheck() {
     if (this.game.hasWon()) {
       this.pr('You won!');
@@ -289,8 +303,28 @@ class Cli {
   // responds to events raised by gae
   gameEvent(type, data) {
     if (this.silenceEvents) return;
-    console.log('Event: ' + type, data);
-    if ((type == 'move' && data.success) || type == 'draw') {
+    let showTable = false;
+    if (type == 'move' && data.success) {
+      if (data.from == 't') {
+        this.pr('npc> m ' + data.from + data.fromIx + ',' + 
+          data.fromCount + ' ' + data.to + data.toIx);
+      } else if (data.from == 'w') {
+        this.pr('npc> m ' + data.from + ' ' + 
+          data.to + data.toIx);
+      } else if (data.from == 'f') {
+        this.pr('npc> m ' + data.from + data.fromIx + ' ' + 
+          data.to + data.toIx);
+      }
+      showTable = true;
+    } else if (type == 'draw') {
+      this.pr('npc> d');
+      showTable = false;
+      this.deck();
+    } else if (type == 'restock') {
+      this.pr('npc> r ', data);
+      showTable = true;
+    }
+    if (showTable) {
       this.table();
     }
   }

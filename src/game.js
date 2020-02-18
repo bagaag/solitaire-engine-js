@@ -261,7 +261,7 @@ class Game {
 
   // moves waste back into stock, returns false if nothing to restock or stock isnt empty
   restock() {
-    if (this.pass >= this.passLimit || this.waste.length == 0 || this.stock.length > 0) {
+    if ((this.passLimit > 0 && this.pass >= this.passLimit) || this.waste.length == 0 || this.stock.length > 0) {
       this._event(Game.EV.RESTOCK, { success: false, pass: this.pass });
       return false;
     }
