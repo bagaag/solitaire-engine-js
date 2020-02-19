@@ -151,13 +151,13 @@ class Game {
     let f = this.foundations[fix-1];
     let l = f.last();
     if (f.length == 0) {
-      // king on empty foundation
-      if (card.rank == 13) {
+      // ace on empty foundation
+      if (card.rank == 1) {
         return true;
       }
     }
     // suit/rank match
-    else if (l.suit == card.suit && l.rank == card.rank + 1) {
+    else if (l.suit == card.suit && l.rank == card.rank - 1) {
       return true;
     }
     return false;

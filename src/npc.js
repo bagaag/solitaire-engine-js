@@ -5,85 +5,53 @@ class Npc {
 
   constructor(game) {
     this.game = game;
-    game.addEventListener(this.eventListener);
+    game.addEventListener((t,d) => { this.eventListener(t,d); });
   }
 
   // plays game in response to card reveals
   eventListener(type, data) {
     if (type == 'reveal') {
-      this.consolidateTableau(data.tableau);
-      let fix = this.game.foundationMatch(data.card);
-      if (fix > 0) {
-        this.game.move('t', data.tableau, 1, 'f', fix);
+      // test for source
+      let src = this.findSource(data.tableau);
+      if (src != undefined) {
+        this.game.move('t', src.tableau, src.count, 't', data.tableau);
+      } 
+      else {
+        // foundation
+        let fix = this.game.foundationMatch(data.card);
+        if (fix > 0) {
+          this.game.move('t', data.tableau, 1, 'f', fix);
+        } 
+        else {
+          // consolidate
+          this.consolidateTableau(data.tableau);
+        }
       }
     }
     else if (type == 'draw') {
       let fix = this.game.foundationMatch(data.card);
       if (fix > 0) {
         this.game.move('w', 0, 1, 'f', fix);
+      } else {
         this.playDeck();
       }
     }
     if (type == 'move') {
       this.movedInPass = true;
+      // test for win on moce to foundation
       if (data.to == 'f') {
+        // test table agaimst new foundation rank
+        TODO
         this.won = this.game.hasWon();
       }
-    }
-  }
-
-  // completes a single draw from the stock surrounded
-  // by two attempts to play the foundation and consolidate
-  // the tableaus
-  playTurn() {
-    let result = { 
-      foundation: false, 
-      consolidated: false, 
-      played: false, 
-      finished: false, 
-      won: false, 
-      draw: false, 
-      restock: false
-    };
-    let g = this.game;
-    result.foundation = this.autoFoundation();
-    result.consolidated = this.consolidateTableaus();
-    result.played = this.playDeck();
-    if (!result.played) {
-      // draw
-      if (g.draw() > 0) {
-        result.draw = true;
-        result.foundation = result.foundation.concat(this.autoFoundation());
-        result.consolidated = result.consolidated || this.consolidateTableaus();
-        result.played = result.played || this.playDeck();
+      // test for consolidation onto new tableau leaf from waste
+      else if (data.to == 't' && data.from == 'w') {
+        let src = this.findSource(data.toIx);
+        if (src != undefined) {
+          this.game.move('t', src.tableau, src.count, 't', data.toIx);
+        }
       }
     }
-    if (result.foundation.length > 0 || result.consolidated || result.played) {
-      this.movedInPass = true;
-    }
-    if (g.pass > 25) {
-      // safety check
-      result.finished = true;
-      console.log('PASS > 25; FORCE QUITTING');
-    }
-    else if (g.stock.length == 0 && g.waste.length > 0) {
-      if (!this.movedInPass) {
-        result.finished = true;
-        result.won = false;
-        return result;
-      }
-      g.restock();
-      g.draw();
-      this.movedInPass = false;
-      result.draw = true;
-      result.restock = true;
-    }
-    // forfeit if no moves in entire pass
-    else if (g.hasWon()) {
-      result.finished = true;
-      result.won = true;
-    }
-    return result;
   }
 
   // kicks things off with full foundation and tableau consolidation
@@ -95,11 +63,12 @@ class Npc {
     while (true) {
       // run through the deck
       while (this.game.stock.length > 0) {
-        this.game.deal();
+        this.game.draw();
         if (this.won) return true;
       }
       if (this.movedInPass) {
         this.game.restock();
+        this.movedInPass = false;
       }
       else {
         // exit if no movement in a full run through the deck
@@ -116,12 +85,15 @@ class Npc {
       if (t.length > 0) {
         let fix = g.foundationMatch(t.last());
         if (fix > 0) {
-          g.move('t', tix + 1, 1, 'f', fix + 1);
+          g.move('t', tix + 1, 1, 'f', fix);
         }
       }
     }
-    if (g.canMove('w', undefined, 1, 'f', fix+1)) {
-      g.move('w', undefined, 1, 'f', fix+1);
+    if (g.waste.length > 0) {
+      let fix = g.foundationMatch(g.waste.last());
+      if (fix > 0) {
+        g.move('w', undefined, 1, 'f', tix+1);
+      }
     }
   }
 
@@ -141,8 +113,9 @@ class Npc {
     }
   }
 
+  // tries to consolidate the given tableau as a source or target
   consolidateTableau(tix) {
-    let t = ts[tix-1];
+    let t = this.game.tableau[tix-1];
     if (t.length == 0) return false;
     // get the lowest face up card
     let fix = this.firstFaceUp(t);
@@ -150,13 +123,22 @@ class Npc {
     // don't bother moving a king that's at the top of the stack
     if (c.rank == 13 && fix == 0) return false; 
     // find a better home
-    let targetIx = this.findTarget(c, i);
+    let targetIx = this.findTarget(c, tix);
+    let g = this.game;
     if (targetIx != undefined) {
-      if (g.move('t', i+1, t.length - fix, 't', targetIx)) {
+      if (g.move('t', tix, t.length - fix, 't', targetIx)) {
         return true;
       }
       else {
         console.log("ERROR: consolidateTableau(" + tix + ")");
+      }
+    }
+    else {
+      let source = this.findSource(tix);
+      if (source != undefined) {
+        if (g.move('t', source.tableau, source.count, 't', tix)) {
+          return true;
+        }
       }
     }
     return false;
@@ -188,14 +170,14 @@ class Npc {
     
   // returns 1-based index of tableau that can accept the 
   // given card, or undefined; ignores the tableau at 
-  // given 0 based index
+  // given 1 based index
   findTarget(card, ignoreIx) {
     let g = this.game;
     let ts = g.tableau;
     let targetIx;
     // for each tableau stack
     for (let i = 0; i < ts.length; i++) {
-      if (i != ignoreIx) {
+      if (i != ignoreIx-1) {
         let t = ts[i];
         if (t.length > 0) {
           let dest = t.last();
@@ -203,7 +185,6 @@ class Npc {
           if (!g.sameColor(card, dest)) {
             // and be 1 rank smaller
             if (card.rank == dest.rank - 1) {
-              //this.cli.pr(card, dest);
               return i+1;
             }
           }
@@ -212,6 +193,25 @@ class Npc {
         else if (card.rank == 13) {
           return i+1;
         }
+      }
+    }
+    return undefined;
+  }
+
+  // returns the 1-based index of a tableau and card count that can be consolidated into the given tableau, or undefined
+  findSource(tix) {
+    let g = this.game;
+    let target = g.tableau[tix - 1].last();
+    let len = g.tableau.length;
+    for (let i = 0; i < len; i++) {
+      if (tix == i+1) continue;
+      let fix = this.firstFaceUp(i+1);
+      if (fix == undefined) continue;
+      let t = g.tableau[i];
+      let card = t[fix];
+      let count = t.length - fix;
+      if (g.canMove('t', i+1, count, 't', tix)) {
+        return { "tableau": i+1, "count": count };
       }
     }
     return undefined;
