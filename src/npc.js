@@ -1,7 +1,35 @@
 // computer plays solitaire
 class Npc {
+  movedInPass = false;
+  won = false;
+
   constructor(game) {
     this.game = game;
+    game.addEventListener(this.eventListener);
+  }
+
+  // plays game in response to card reveals
+  eventListener(type, data) {
+    if (type == 'reveal') {
+      this.consolidateTableau(data.tableau);
+      let fix = this.game.foundationMatch(data.card);
+      if (fix > 0) {
+        this.game.move('t', data.tableau, 1, 'f', fix);
+      }
+    }
+    else if (type == 'draw') {
+      let fix = this.game.foundationMatch(data.card);
+      if (fix > 0) {
+        this.game.move('w', 0, 1, 'f', fix);
+        this.playDeck();
+      }
+    }
+    if (type == 'move') {
+      this.movedInPass = true;
+      if (data.to == 'f') {
+        this.won = this.game.hasWon();
+      }
+    }
   }
 
   // completes a single draw from the stock surrounded
@@ -58,43 +86,43 @@ class Npc {
     return result;
   }
 
+  // kicks things off with full foundation and tableau consolidation
+  // checks, then runs through deck until a full run results in no
+  // moves. tests for win status along the way
   playGame() {
-    this.movedInPass = false;
+    this.autoFoundation();
+    this.consolidateTableaus();
     while (true) {
-      let result = this.playTurn();
-      if (result.finished) break;
+      // run through the deck
+      while (this.game.stock.length > 0) {
+        this.game.deal();
+        if (this.won) return true;
+      }
+      if (this.movedInPass) {
+        this.game.restock();
+      }
+      else {
+        // exit if no movement in a full run through the deck
+        return this.won;
+      }
     }
   }
 
   // plays what can be played to the foundations from tableau and waste
   autoFoundation() {
-    let moves = [];
-    let moved = false;
     let g = this.game;
-    while (true) {
-      for (const fix of g.foundations.keys()) {
-        for (const tix of g.tableau.keys()) {
-          if (g.canMove('t', tix + 1, 1, 'f', fix + 1)) {
-            g.move('t', tix + 1, 1, 'f', fix + 1);
-            moves.push(['t', tix + 1,'f', fix + 1]);
-            moved = true;
-          }
+    for (const tix of g.tableau.keys()) {
+      let t = g.tableau[tix];
+      if (t.length > 0) {
+        let fix = g.foundationMatch(t.last());
+        if (fix > 0) {
+          g.move('t', tix + 1, 1, 'f', fix + 1);
         }
-        if (g.canMove('w', 0, 1, 'f', fix+1)) {
-          g.move('w', 0, 1, 'f', fix+1);
-          moves.push(['w', undefined, 'f', fix + 1]);
-          moved = true;
-        }
-      }
-      // exit if nothing more can be moved
-      if (!moved) {
-        break;
-      } 
-      else {
-        moved = false;
       }
     }
-    return moves;
+    if (g.canMove('w', undefined, 1, 'f', fix+1)) {
+      g.move('w', undefined, 1, 'f', fix+1);
+    }
   }
 
   // returns first face up card in a given array of Cards
@@ -107,42 +135,53 @@ class Npc {
 
   // attempt to expose tableau cards by consolidating stacks
   consolidateTableaus() {
-    let g = this.game;
-    let ts = g.tableau;
-    let targetIx;
-    // for each tableau stack
-    for (let i = 0; i < ts.length; i++) {
-      // get the lowest face up card
-      let t = ts[i];
-      if (t.length == 0) continue;
-      let fix = this.firstFaceUp(t);
-      let c = t[fix];
-      // don't bother moving a king that's at the top of the stack
-      if (c.rank == 13 && t[0].rank == 13) continue; 
-      // find a better home
-      targetIx = this.findTarget(c, i);
-      if (targetIx) {
-        if (g.move('t', i+1, t.length - fix, 't', targetIx)) {
-          this.autoFoundation();
-          this.consolidateTableaus();;
-          return true;
-        }
+    let len = this.game.tableau.length;
+    for (let i = 0; i < len; i++) {
+      this.consolidateTableau(i+1);
+    }
+  }
+
+  consolidateTableau(tix) {
+    let t = ts[tix-1];
+    if (t.length == 0) return false;
+    // get the lowest face up card
+    let fix = this.firstFaceUp(t);
+    let c = t[fix];
+    // don't bother moving a king that's at the top of the stack
+    if (c.rank == 13 && fix == 0) return false; 
+    // find a better home
+    let targetIx = this.findTarget(c, i);
+    if (targetIx != undefined) {
+      if (g.move('t', i+1, t.length - fix, 't', targetIx)) {
+        return true;
+      }
+      else {
+        console.log("ERROR: consolidateTableau(" + tix + ")");
       }
     }
     return false;
   }
 
-  // attempt to play the top waste card in a way that will lead to tableau consolidation
+  // attempt to play the top waste card in a way that will lead to tableau consolidation, failing that, try the foundations
+  // recurses if successful to play revealed waste card
   playDeck() {
     if (this.game.waste.length == 0) return false;
     let c = this.game.waste.last();
     let targetIx = this.findTarget(c);
-    if (targetIx) {
+    if (targetIx != undefined) {
       let rider = this.findRider(c, targetIx);
       if (rider != undefined)  {
         this.game.move('w', undefined, 1, 't', targetIx);
+        this.playDeck();
         return true;
       }
+    }
+    // try foundations
+    let fix = this.game.foundationMatch(c);
+    if (fix > 0) {
+      this.game.move('w', undefined, 1, 'f', fix);
+      this.playDeck();
+      return true;
     }
     return false;
   }
@@ -158,9 +197,8 @@ class Npc {
     for (let i = 0; i < ts.length; i++) {
       if (i != ignoreIx) {
         let t = ts[i];
-        let dest = t.last();
-        // dest must exist
-        if (dest != undefined) {
+        if (t.length > 0) {
+          let dest = t.last();
           // and be opposite color
           if (!g.sameColor(card, dest)) {
             // and be 1 rank smaller
@@ -170,6 +208,7 @@ class Npc {
             }
           }
         }
+        // only kings can target an empty tableau
         else if (card.rank == 13) {
           return i+1;
         }
@@ -178,7 +217,8 @@ class Npc {
     return undefined;
   }
 
-  // finds a tableau stack that can be a future consolidation if the given card is played from the deck
+  // finds a tableau stack that can be a future consolidation 
+  // if the given card is played from the deck or foundation
   findRider(card, ignoreIx) {
     let g = this.game;
     let riders = [];

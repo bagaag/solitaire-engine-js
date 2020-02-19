@@ -128,23 +128,39 @@ class Game {
       }
     }
     else if (to == 'f') {
-      // first card must be an ace
-      if (!dest) {
-        if (card.rank != 1) {
-          return false;
-        }
-      }
-      else {
-        // must be same suit and one rank higher than dest
-        if (card.suit != dest.suit || card.rank != dest.rank + 1) {
-          return false;
-        }
-      }
+      return this.foundationMatch(card, toIx) > 0;
     }
     else {
       return false;
     }
     return true;
+  }
+
+  // returns 1-based index of foundation that can accept the card
+  // or 0 if no match
+  foundationMatch(card) {
+    let c = this.foundations.length;
+    for (let i=0; i<c; i++) {
+      if (this.fitsFoundation(card, i+1)) return i+1;
+    }
+    return 0;
+  }
+
+  // returns true if given card can be placed on given 1-based foundation index
+  fitsFoundation(card, fix) {
+    let f = this.foundations[fix-1];
+    let l = f.last();
+    if (f.length == 0) {
+      // king on empty foundation
+      if (card.rank == 13) {
+        return true;
+      }
+    }
+    // suit/rank match
+    else if (l.suit == card.suit && l.rank == card.rank + 1) {
+      return true;
+    }
+    return false;
   }
 
   // returns a card from (s)tock, (t)ableau or (f)oundation without removing from its position
@@ -235,7 +251,8 @@ class Game {
   tableauCompatible(card1, card2) {
     let samePolarity = (card1.rank % 2) == (card2.rank % 2);
     let sameColor = this.sameColor(card1, card2);
-    return samePolarity && sameColor;
+    //console.log('TC ', card1, card2, samePolarity, sameColor);
+    return samePolarity == sameColor;
   }
 
   // moves a card from stock to waste, returns false if stock is empty
