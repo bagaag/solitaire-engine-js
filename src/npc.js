@@ -40,8 +40,8 @@ class Npc {
       this.movedInPass = true;
       // test for win on moce to foundation
       if (data.to == 'f') {
-        // test table agaimst new foundation rank
-        TODO
+        // test table against new foundation rank
+        this.autoFoundation();
         this.won = this.game.hasWon();
       }
       // test for consolidation onto new tableau leaf from waste
@@ -92,7 +92,7 @@ class Npc {
     if (g.waste.length > 0) {
       let fix = g.foundationMatch(g.waste.last());
       if (fix > 0) {
-        g.move('w', undefined, 1, 'f', tix+1);
+        g.move('w', undefined, 1, 'f', fix);
       }
     }
   }
@@ -101,7 +101,7 @@ class Npc {
   firstFaceUp(a) {
     for (let i = 0; i < a.length; i++) {
       let c = a[i];
-      if (c.faceUp) return i;
+      if (c.faceUp || i == a.length -1) return i;
     }
   }
 
@@ -130,7 +130,7 @@ class Npc {
         return true;
       }
       else {
-        console.log("ERROR: consolidateTableau(" + tix + ")");
+        console.log("ERROR: consolidateTableau", tix, t.length - fix, targetIx);
       }
     }
     else {
