@@ -2,6 +2,7 @@
 class Npc {
   movedInPass = false;
   won = false;
+  stack = 0;
 
   constructor(game) {
     this.game = game;
@@ -10,6 +11,9 @@ class Npc {
 
   // plays game in response to card reveals
   eventListener(type, data) {
+    this.stack++;
+    if (this.stack == 50) process.exit();
+    console.log('> Event', type, data);
     if (type == 'reveal') {
       // test for source
       let src = this.findSource(data.tableau);
@@ -103,6 +107,7 @@ class Npc {
       let c = a[i];
       if (c.faceUp || i == a.length -1) return i;
     }
+    return undefined;
   }
 
   // attempt to expose tableau cards by consolidating stacks
@@ -181,10 +186,10 @@ class Npc {
         let t = ts[i];
         if (t.length > 0) {
           let dest = t.last();
-          // and be opposite color
+          // must be opposite color
           if (!g.sameColor(card, dest)) {
             // and be 1 rank smaller
-            if (card.rank == dest.rank - 1) {
+            if (card.rank == dest.rank + 1) {
               return i+1;
             }
           }
@@ -212,6 +217,9 @@ class Npc {
       let count = t.length - fix;
       if (g.canMove('t', i+1, count, 't', tix)) {
         return { "tableau": i+1, "count": count };
+      }
+      else { 
+        console.log('ERROR findSource move failed', tix, i);
       }
     }
     return undefined;
