@@ -2,7 +2,18 @@ X deal 1 or 3
 
 X limit recycles
 
-full autoplay
+X full autoplay
+
+bug: >p - play turn is broken
+
+remember revealed deck cards for possible interim consolidation sources after 1st pass
+
+reorganize tableaus in order to feed foundations 
+
+bug: seems like waste gets played when there is already a closer horse
+
+only show $ if vegas rules are in effect
+
+bug: $ is given on recycle
 
 stats
-

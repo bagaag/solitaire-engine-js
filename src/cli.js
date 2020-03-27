@@ -321,7 +321,7 @@ class Cli {
       showTable = false;
       this.deck();
     } else if (type == 'restock') {
-      this.pr('npc> r ', data);
+      this.pr('npc> r');
       showTable = true;
     }
     if (showTable) {

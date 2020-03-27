@@ -2,7 +2,7 @@
 class Npc {
   movedInPass = false;
   won = false;
-  stack = 0;
+  eventStack = 0;
 
   constructor(game) {
     this.game = game;
@@ -11,21 +11,24 @@ class Npc {
 
   // plays game in response to card reveals
   eventListener(type, data) {
-    this.stack++;
-    if (this.stack == 50) process.exit();
-    console.log('> Event', type, data);
+    this.eventStack++;
+    if (this.eventStack > 20) {
+      console.log('Event Stack Exceeded - Exiting');
+      process.exit();
+    }
     if (type == 'reveal') {
       // test for source
       let src = this.findSource(data.tableau);
       if (src != undefined) {
         this.game.move('t', src.tableau, src.count, 't', data.tableau);
+        this.consolidateTableau(data.tableau);
       } 
       else {
         // foundation
         let fix = this.game.foundationMatch(data.card);
         if (fix > 0) {
           this.game.move('t', data.tableau, 1, 'f', fix);
-        } 
+        }
         else {
           // consolidate
           this.consolidateTableau(data.tableau);
@@ -40,9 +43,9 @@ class Npc {
         this.playDeck();
       }
     }
-    if (type == 'move') {
+    if (type == 'move' && data.success) {
       this.movedInPass = true;
-      // test for win on moce to foundation
+      // test for win on move to foundation
       if (data.to == 'f') {
         // test table against new foundation rank
         this.autoFoundation();
@@ -56,6 +59,7 @@ class Npc {
         }
       }
     }
+    this.eventStack--;
   }
 
   // kicks things off with full foundation and tableau consolidation
@@ -158,7 +162,10 @@ class Npc {
     if (targetIx != undefined) {
       let rider = this.findRider(c, targetIx);
       if (rider != undefined)  {
-        this.game.move('w', undefined, 1, 't', targetIx);
+        if (!this.game.move('w', undefined, 1, 't', targetIx)) {
+        console.log('Error moving at playDeck 1');
+        debugger;
+        }
         this.playDeck();
         return true;
       }
@@ -166,7 +173,10 @@ class Npc {
     // try foundations
     let fix = this.game.foundationMatch(c);
     if (fix > 0) {
-      this.game.move('w', undefined, 1, 'f', fix);
+      if (!this.game.move('w', undefined, 1, 'f', fix)) {
+        console.log('Error moving at playDeck 2');
+        debugger;
+      }
       this.playDeck();
       return true;
     }
@@ -189,7 +199,7 @@ class Npc {
           // must be opposite color
           if (!g.sameColor(card, dest)) {
             // and be 1 rank smaller
-            if (card.rank == dest.rank + 1) {
+            if (card.rank == dest.rank - 1) {
               return i+1;
             }
           }
@@ -202,29 +212,27 @@ class Npc {
     }
     return undefined;
   }
-
-  // returns the 1-based index of a tableau and card count that can be consolidated into the given tableau, or undefined
+  
+  // returns the 1-based index of a tableau and card count that can be consolidated 
+  // into the given tableau, or undefined
   findSource(tix) {
     let g = this.game;
     let target = g.tableau[tix - 1].last();
     let len = g.tableau.length;
     for (let i = 0; i < len; i++) {
       if (tix == i+1) continue;
-      let fix = this.firstFaceUp(i+1);
-      if (fix == undefined) continue;
       let t = g.tableau[i];
+      let fix = this.firstFaceUp(t);
+      if (fix == undefined) continue;
       let card = t[fix];
       let count = t.length - fix;
       if (g.canMove('t', i+1, count, 't', tix)) {
         return { "tableau": i+1, "count": count };
       }
-      else { 
-        console.log('ERROR findSource move failed', tix, i);
-      }
     }
     return undefined;
   }
-
+  
   // finds a tableau stack that can be a future consolidation 
   // if the given card is played from the deck or foundation
   findRider(card, ignoreIx) {

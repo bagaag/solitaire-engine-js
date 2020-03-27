@@ -82,7 +82,7 @@ class Game {
         return false;
       }
     }
-    else if (to != 'w') {
+    else {
       return false;
     }
 
