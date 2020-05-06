@@ -41,19 +41,22 @@ class Cli {
       else if (ans.startsWith('m')) {
         this.move(ans);
       }
+      else if (ans == 's') {
+        this.npcStep();
+      } 
       else if (ans == 'd') {
         this.draw();
       } 
       else if (ans == 'r') {
         this.restock();
       }
-      else if (ans == 'a') {
+      else if (ans == 'f') {
         this.autoFoundation();
       }
-      else if (ans == 'p') {
-        this.npcMove();
+      else if (ans == 'w') {
+        this.npcWaste();
       }
-      else if (ans == 'P') {
+      else if (ans == 'a') {
         this.npcGame();
       }
       else if (ans == 'N') {
@@ -157,9 +160,11 @@ class Cli {
     this.pr("d: draw the next card from stock");
     this.pr("m [from: w|f1-f4|t1-t7,n to: f1-f4|t1-t7]]: enter 'h m' for details");
     this.pr("r: restock from waste pile");
-    this.pr('a: move cards from tableau and waste to foundations');
-    this.pr('p: plays cards to foundation, consolidates tableaus and draws from stock');
-    this.pr('P: plays the rest of the game in auto mode');
+    this.pr('f: move cards from tableau and waste to foundations');
+    this.pr('c: auto consolidate tableaus');
+    this.pr('w: attempts to place cards from waste');
+    this.pr('s: plays one step of auto mode');
+    this.pr('a: plays the rest of the game in auto mode');
     this.pr("N: new game");
     this.pr("x: exit");
   }
@@ -177,41 +182,36 @@ class Cli {
 
   // validate m command and  moves a card
   move(args) {
-    if (args == 'm') {
-      this.moveAuto();
+    // parse arguments
+    let m = args.match(this.moveRE);
+    if (m == null) {
+      this.pr('Invald move syntax.');
+      return false;
+    }
+    let from = m[1];
+    let fromIx = m[2];
+    let fromCount = 1;
+    if (fromIx.indexOf(',') > 0) {
+      let a = fromIx.split(',');
+      fromIx = a[0];
+      fromCount = a[1];
+    }
+    let to = m[3];
+    let toIx = m[4];
+      
+    // move the card
+    if (this.game.move(from, fromIx, fromCount, to, toIx)) {
+      this.pr('Moved ' + args);
     }
     else {
-      // parse arguments
-      let m = args.match(this.moveRE);
-      if (m == null) {
-        this.pr('Invald move syntax.');
-        return false;
-      }
-      let from = m[1];
-      let fromIx = m[2];
-      let fromCount = 1;
-      if (fromIx.indexOf(',') > 0) {
-        let a = fromIx.split(',');
-        fromIx = a[0];
-        fromCount = a[1];
-      }
-      let to = m[3];
-      let toIx = m[4];
-        
-      // move the card
-      if (this.game.move(from, fromIx, fromCount, to, toIx)) {
-        this.pr('Moved ' + args);
-      }
-      else {
-        this.pr('Illegal move.');
-        return false;
-      }
-
-      // display result
-      this.table();
-      this.winCheck();
-      return true;
+      this.pr('Illegal move.');
+      return false;
     }
+
+    // display result
+    this.table();
+    this.winCheck();
+    return true;
   }
 
   // draws next card from stock
@@ -282,14 +282,21 @@ class Cli {
     return result;
   }
 
-  // performs a single round by npc
-  npcMove() {
-    this.npc.playTurn();
+  // attempts to play cards from waste
+  npcWaste() {
+    if (!this.npc.playDeck()) {
+      this.pr('npc> No adventageous move available.');
+    }
   }
-
+  
+  // plays one step of npc audo mode
+  npcStep() {
+    this.npc.playGame(true);
+  }
+  
   // plays the rest of the game via npc
   npcGame() {
-    this.npc.playGame();
+    this.npc.playGame(false);
   }
 
   winCheck() {

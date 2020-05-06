@@ -1,8 +1,12 @@
+const Game = require('./game.js').Game;
+
 // computer plays solitaire
 class Npc {
   movedInPass = false;
   won = false;
   eventStack = 0;
+  stepMode = false;
+  steps = 0;
 
   constructor(game) {
     this.game = game;
@@ -16,14 +20,16 @@ class Npc {
       console.log('Event Stack Exceeded - Exiting');
       process.exit();
     }
-    if (type == 'reveal') {
+    if (type == Game.EV.REVEAL) {
+      if (!this.keepGoing()) { this.eventStack--; return; }
       // test for source
       let src = this.findSource(data.tableau);
       if (src != undefined) {
         this.game.move('t', src.tableau, src.count, 't', data.tableau);
+        if (!this.keepGoing()) { this.eventStack--; return; }
         this.consolidateTableau(data.tableau);
       } 
-      else {
+      else if (data.card != undefined) { // if not an empty tableau
         // foundation
         let fix = this.game.foundationMatch(data.card);
         if (fix > 0) {
@@ -35,15 +41,17 @@ class Npc {
         }
       }
     }
-    else if (type == 'draw') {
-      let fix = this.game.foundationMatch(data.card);
+    else if (type == Game.EV.DRAW) {
+      if (!this.keepGoing(true)) { this.eventStack--; return; }
+      let fix = this.game.foundationMatch(data.cards.last());
       if (fix > 0) {
         this.game.move('w', 0, 1, 'f', fix);
       } else {
         this.playDeck();
       }
     }
-    if (type == 'move' && data.success) {
+    if (type == Game.EV.MOVE && data.success) {
+      if (!this.keepGoing(true)) { this.eventStack--; return; }
       this.movedInPass = true;
       // test for win on move to foundation
       if (data.to == 'f') {
@@ -65,15 +73,21 @@ class Npc {
   // kicks things off with full foundation and tableau consolidation
   // checks, then runs through deck until a full run results in no
   // moves. tests for win status along the way
-  playGame() {
+  playGame(stepMode) {
+    this.stepMode = stepMode;
+    this.steps = 0;
     this.autoFoundation();
+    if (!this.keepGoing()) return;
     this.consolidateTableaus();
+    if (!this.keepGoing()) return;
     while (true) {
       // run through the deck
       while (this.game.stock.length > 0) {
+        if (!this.keepGoing()) return;
         this.game.draw();
         if (this.won) return true;
       }
+      if (!this.keepGoing()) return;
       if (this.movedInPass) {
         this.game.restock();
         this.movedInPass = false;
@@ -94,6 +108,7 @@ class Npc {
         let fix = g.foundationMatch(t.last());
         if (fix > 0) {
           g.move('t', tix + 1, 1, 'f', fix);
+          if (!this.keepGoing()) return;
         }
       }
     }
@@ -118,6 +133,7 @@ class Npc {
   consolidateTableaus() {
     let len = this.game.tableau.length;
     for (let i = 0; i < len; i++) {
+      if (!this.keepGoing()) return;
       this.consolidateTableau(i+1);
     }
   }
@@ -164,7 +180,6 @@ class Npc {
       if (rider != undefined)  {
         if (!this.game.move('w', undefined, 1, 't', targetIx)) {
         console.log('Error moving at playDeck 1');
-        debugger;
         }
         this.playDeck();
         return true;
@@ -175,7 +190,6 @@ class Npc {
     if (fix > 0) {
       if (!this.game.move('w', undefined, 1, 'f', fix)) {
         console.log('Error moving at playDeck 2');
-        debugger;
       }
       this.playDeck();
       return true;
@@ -217,7 +231,6 @@ class Npc {
   // into the given tableau, or undefined
   findSource(tix) {
     let g = this.game;
-    let target = g.tableau[tix - 1].last();
     let len = g.tableau.length;
     for (let i = 0; i < len; i++) {
       if (tix == i+1) continue;
@@ -270,6 +283,16 @@ class Npc {
       if ((horse.rank - rider.rank) < distance) return tix;
     }
     return undefined;
+  }
+
+  // test for whether to stop after a single step 
+  keepGoing (stepTaken = false) {
+    if (stepTaken) this.steps++;
+    //console.log(`keepGoing stepTaken=${stepTaken} steps=${this.steps}`);
+    if (this.stepMode && this.steps > 0) {
+      return false;
+    }
+    return true;
   }
 }
 

@@ -1,19 +1,15 @@
-X deal 1 or 3 
+X bug: >p - play turn is broken
 
-X limit recycles
+keep testing auto and step to debug changes - get through 3 games w/out incident
 
-X full autoplay
+bug: seems like waste gets played when there is already a closer horse
 
-bug: >p - play turn is broken
+bug: $ is given on recycle
+
+only show $ if vegas rules are in effect
+
+stats
 
 remember revealed deck cards for possible interim consolidation sources after 1st pass
 
 reorganize tableaus in order to feed foundations 
-
-bug: seems like waste gets played when there is already a closer horse
-
-only show $ if vegas rules are in effect
-
-bug: $ is given on recycle
-
-stats

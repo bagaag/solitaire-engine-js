@@ -193,7 +193,7 @@ class Game {
       toIx: toIx
     };
     if (!this.canMove(from, fromIx, fromCount, to, toIx)) {
-      this._event(Game.EV.MOVE, evdata); 
+      //this._event(Game.EV.MOVE, evdata); 
       return false;
     }
     let card = false;
@@ -216,7 +216,7 @@ class Game {
       dest = this.foundations[toIx - 1];
     }
     if (!card || !dest) {
-      this._event(Game.EV.MOVE, evdata); 
+      //this._event(Game.EV.MOVE, evdata); 
       return false;
     }
     if (Array.isArray(card)) {
@@ -231,13 +231,10 @@ class Game {
     this._event(Game.EV.MOVE, evdata); 
     if (from == 't') {
       let last = this.tableau[fromIx - 1].last();
-      if (last && !last.faceUp) {
-        last.faceUp = true;
-        this._event(Game.EV.REVEAL, {
-          tableau: fromIx,
-          card: last
-        });
-      }
+      this._event(Game.EV.REVEAL, {
+        tableau: fromIx,
+        card: last
+      });
     }
     return true;
   }
@@ -255,8 +252,9 @@ class Game {
     return samePolarity == sameColor;
   }
 
-  // moves a card from stock to waste, returns false if stock is empty
+  // moves a card from stock to waste, returns number of cards drawn
   draw() {
+    let cards = [];
     if (this.stock.length > 0) {
       let count = this.draw3 ? 3 : 1;
       let ret = 0;
@@ -266,9 +264,10 @@ class Game {
           ret++;
           card.faceUp = true;
           this.waste.push(card);
-          this._event(Game.EV.DRAW, { card: card, ix: i+1, count: count });
+          cards.push(card);
         }
       } 
+      this._event(Game.EV.DRAW, { cards: cards });
       return ret;
     }
     else {
