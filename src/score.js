@@ -60,7 +60,7 @@ class Score {
 }
 
 /*
- * Microsoft, timed and untimed
+ * Microsoft Solitaire, timed and untimed
 Waste to Tableau 	5
 Waste to Foundation 	10
 Tableau to Foundation 	10
@@ -68,7 +68,8 @@ Turn over Tableau card 	5
 Foundation to Tableau 	−15
 Recycle waste when playing by ones 	−100 (minimum score is 0) 
 -2 pts for each 10 seconds in timed game
-bonus: (20,000 / (seconds to finish)) * 35 (where / is integer division), if the game takes at least 30 seconds. If the game takes less than 30 seconds, no bonus points are awarded. 
+bonus: (20,000 / (seconds to finish)) * 35 (where / is integer division), if the game takes at least 30 seconds. 
+  If the game takes less than 30 seconds, no bonus points are awarded. 
 */
 class ScoreMS extends Score {
 
@@ -129,7 +130,8 @@ class ScoreMS extends Score {
 
 /*
  * Vegas, drawing 1/1
-Ante is $52 to begin playing each game. $5 for each card moved to a suit stack. Draw one at a time allows one run through deck. Draw three allows three runs.
+Ante is $52 to begin playing each game. $5 for each card moved to a suit stack. 
+Draw one at a time allows one run through deck. Draw three allows three runs.
 */
 class ScoreVegas extends Score {
   run = 1;
