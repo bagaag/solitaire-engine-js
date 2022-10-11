@@ -1,4 +1,4 @@
-X bug: >p - play turn is broken
+bug: got D-2 from the deck twice in a row while playing
 
 keep testing auto and step to debug changes - get through 3 games w/out incident
 
@@ -13,3 +13,22 @@ stats
 remember revealed deck cards for possible interim consolidation sources after 1st pass
 
 reorganize tableaus in order to feed foundations 
+
+debug commands to reveal hidden cards
+
+tree-based autoplay where multiple play options branch out to determine if a hand is winnable
+
+visual table display:
+
+     F1     F2     F3     F4     Deck, pass 1
+    [S-3]  [C-2]  [---]  [---]    [H-4] 14/30
+
+     T1    T2    T3    T4    T5    T6    T7
+    [D-J] [ ~ ] [ ~ ] [ ~ ] [ ~ ] [ ~ ] [ ~ ]
+          [S-Q] [ ~ ] [ ~ ] [ ~ ] [ ~ ] [ ~ ]
+                [ ~ ] [ ~ ] [ ~ ] [ ~ ] [ ~ ]
+                      [ ~ ] [ ~ ] [ ~ ] [ ~ ]
+                            [ ~ ] [ ~ ] [ ~ ]
+                                  [ ~ ] [ ~ ]
+                                        [ ~ ]
+
