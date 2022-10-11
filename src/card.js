@@ -15,8 +15,9 @@ class Card {
 
   toString() {
     let r = this.rank;
-    r = r==11 ? 'J' : r==12 ? 'Q' : r==13 ? 'K' : r==1 ? 'A' : r;
-    return "[" + this.suit + "-" + r + "]";
+    r = r == 11 ? 'J' : r == 12 ? 'Q' : r == 13 ? 'K' : r == 1 ? 'A' : r;
+    const sep = r == 10 ? '' : '-'; 
+    return "[" + this.suit + sep + r + "]";
   }
 }
 
